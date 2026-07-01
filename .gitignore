@@ -40,3 +40,6 @@ Thumbs.db
 *.key
 *.pem
 credentials.json
+
+# Upstream source (fetched by scripts, not committed)
+upstream/
