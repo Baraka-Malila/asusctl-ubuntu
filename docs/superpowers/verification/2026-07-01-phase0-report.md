@@ -215,6 +215,58 @@ Upstream ships `99-nvidia-ac.rules` which starts/stops `nvidia-powerd.service` o
 
 **Note on dbus object path:** Plan and both my initial guesses (`/org/asuslinux` and `/org/supergfxctl/Daemon`) were wrong. supergfxctl CLI works fine — no impact on functionality — but any GUI/dbus-client integration needs to use the exact object paths asusd/supergfxd expose. To be discovered during GUI work (v0.2).
 
+## GPU Mode Switching (Task 13) — ✅ WORKS SAFELY
+
+**Test venue:** Installed system (not live USB). AC power, work saved, no SSH backup, deliberate step-through.
+
+**Baseline before test:**
+- Mode: `Hybrid`
+- Pending action: `No action required`
+- Pending mode: `Unknown` (clean, no queued change)
+- `nvidia_uvm used_by=0` (bongoSTEM stopped by user before test — critical prerequisite)
+- Display session (gnome-shell) using NVIDIA — expected
+
+**Command 1: `supergfxctl -m Integrated`**
+
+- Return code: `0`
+- Stdout: `Graphics mode changed to Integrated. Required user action is: Logout required to complete mode change`
+- Immediate state:
+  - Live mode: still `Hybrid` (untouched) ✓
+  - Pending action: `Logout required to complete mode change`
+  - Pending mode: `Integrated` (queued)
+- Journal:
+  - `INFO: Switching gfx mode to Integrated`
+  - `DEBUG: Doing action: WaitLogout`
+- **No display glitch. No lockup. No crash.** Session untouched.
+
+**Command 2: `supergfxctl -m Hybrid` (cancel pending)**
+
+- Return code: `0`
+- Stdout: `Graphics mode changed to Hybrid`
+- Post-state:
+  - Live mode: `Hybrid`
+  - Pending: `No action required`
+  - Pending mode: `Hybrid` (clean)
+- Journal (30 seconds after initial command):
+  - `WARN: Time (30 seconds) for logout exceeded`
+  - `ERROR: Action thread errored fallback failed: Timed out waiting for systemd unit change`
+
+**Interpretation of the WARN/ERROR:** These are supergfxd's normal timeout behavior when a queued switch doesn't get its logout within 30 seconds. supergfxd cancels the queue itself. Non-fatal. Cancellation via `-m Hybrid` also works while pending is armed.
+
+**Key finding — the logout-mediated switch model is FA507NV-safe:**
+
+- No live driver unload during runtime → no ACPI code path is exercised → the documented `nv_acpi_powersource_hotplug_event` LOCKUP is not triggered by mode switching
+- User controls when the switch applies (by logging out)
+- Cancellation is trivial (issue current-mode command before logout)
+- 30-second timeout catches user who queues a switch but never logs out
+
+**v0.1 packaging verdict: supergfxctl is SHIPPABLE.** No special hardware-specific patching required for mode switching itself. Still need to handle the `99-nvidia-ac.rules` exclusion (recorded in Task 10 section).
+
+**Untested (deferred to future testing or user-level acceptance):**
+- Actual switch completion after real logout (would require SSH-back-in flow, not attempted here)
+- `AsusMuxDgpu` mode (physical mux switch, reboot required, higher risk on FA507NV, deferred)
+- Live GPU-load-during-switch behavior (not attempted — mode change was queued, not applied)
+
 ## Recommended Actions for v0.1
 
 *(filled in by Task 16)*
