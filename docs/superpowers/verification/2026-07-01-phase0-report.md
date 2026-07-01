@@ -137,6 +137,38 @@ Existing `battery-charge-threshold.service` continued running throughout the tes
 **Working:** 1 of 4. This is thin for a v0.1. Options to consider at Task 16 verdict time: submit upstream patches and wait; ship thin v0.1 with clear docs; try older stable line (6.3.8) to compare.
 
 
+### supergfxctl v5.2.7
+
+**Upstream source:** Archived GitLab (OGC mirror unavailable)
+- OGC `https://github.com/OpenGamingCollective/supergfxctl.git` — failed (not found)
+- Fallback `https://gitlab.com/asus-linux/supergfxctl.git` — success ✓
+
+**Rust version:** rustc 1.93.1 (01f6ddf75 2026-02-11)
+
+**Build outcome:** SUCCESS
+
+**Build duration:** 51.68 seconds
+
+**Build warnings:** 0 (clean build)
+
+**Build command:**
+```bash
+cd upstream/supergfxctl
+cargo build --release
+```
+
+**Binaries produced:**
+
+1. `target/release/supergfxd` (3,927,648 bytes)
+   - ELF 64-bit LSB pie executable, x86-64, dynamically linked
+   - BuildID: 5688f39404484a11ea72885a24c15f6324aa35d9
+
+2. `target/release/supergfxctl` (1,851,984 bytes)
+   - ELF 64-bit LSB pie executable, x86-64, dynamically linked
+   - BuildID: 0701a22e3fa60de5e7c3d949c41df2894fa1a81b
+
+**Status:** Both binaries are valid ELF 64-bit executables, ready for testing.
+
 ## Recommended Actions for v0.1
 
 *(filled in by Task 16)*
