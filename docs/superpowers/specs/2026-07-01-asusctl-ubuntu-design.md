@@ -19,7 +19,21 @@
 >
 > Current authoritative direction for v0.1: **[2026-07-01-phase0-v01-recommendations.md](../verification/2026-07-01-phase0-v01-recommendations.md)**.
 >
-> Sections not listed above (repo layout, GUI plan for v0.2, testing strategy, Ubuntu version target, BIOS handling, rollback safety) remain valid unchanged.
+> ### Revised phase structure (adopted 2026-07-01)
+>
+> The v1 spec collapsed "package upstream" and "fix broken features" into a single "v0.1 packaging" phase, which understated the code work needed. Current model:
+>
+> | Phase | Focus | Deliverable |
+> |---|---|---|
+> | **Phase 0** ✅ done | Verify upstream on FA507NV | Verification report + recommendations |
+> | **Phase 1 — The Fork** | Code fixes and feature restoration | Patched asusd/asusctl/supergfxd binaries with all shipping features working on FA507NV. Our `patches/` quilt series maintained. |
+> | **Phase 2 — The Packaging** | `debian/` + PPA + CI + docs | Users `sudo apt install asusctl-suite` on Jammy/Noble. Launchpad PPA live. |
+> | **Phase 3 — The GUI** | GTK4+libadwaita Rust GUI | Visual control center, Armoury-Crate-equivalent UX. |
+> | **Phase 4 — Distro Expansion** | Ubuntu 26.04, Debian bookworm/trixie | Broader user base, wider support matrix. |
+>
+> Phase 1 subsumes what the v1 spec called v0.1's "packaging strategy" — no, that was code work masquerading as packaging. Phase 2 is the real packaging. Phase 3 and Phase 4 map directly to v1's v0.2 and v0.3 respectively.
+>
+> Sections not listed above (repo layout, GUI plan, testing strategy, Ubuntu version target, BIOS handling, rollback safety) remain valid unchanged.
 
 ---
 
