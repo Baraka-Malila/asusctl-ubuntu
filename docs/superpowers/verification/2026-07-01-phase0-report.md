@@ -15,25 +15,11 @@
 
 **Build duration:** 26.15 seconds
 
-**Build warnings:** 2 (both from asus-nb-ctrl: field `kbd_node` never read in CtrlKbdBacklight, one unused warning from err-derive)
+**Build warnings:** 2 (asus-nb-ctrl: field `kbd_node` never read in CtrlKbdBacklight; unused warning from err-derive)
 
-**Build command:**
-```bash
-cd upstream/asusctl
-cargo build --release
-```
+**Build command:** `cd upstream/asusctl && cargo build --release`
 
-**Binaries produced:**
-
-1. `target/release/asusd` (1,434,776 bytes)
-   - ELF 64-bit LSB pie executable, x86-64, dynamically linked
-   - BuildID: 8475072e356a1338cb388d70656f61de3256daf2
-
-2. `target/release/asusctl` (778,008 bytes)
-   - ELF 64-bit LSB pie executable, x86-64, dynamically linked
-   - BuildID: e1fe1348f2501b9459cd2f1ffe24f47b22c3676c
-
-**Status:** Both binaries are valid ELF 64-bit executables, ready for testing.
+**Binaries produced:** `target/release/asusd` (1,434,776 bytes, ELF 64-bit pie) and `target/release/asusctl` (778,008 bytes, ELF 64-bit pie). Both dynamically linked. Ready for testing.
 
 ## asusd Runtime Install Notes (Task 4)
 
@@ -290,26 +276,10 @@ That document contains: features cleared to ship, features deferred, upstream pa
 
 ## Task 17 — Teardown Verification
 
-**Teardown helper:** `scripts/phase0-teardown.sh` (idempotent, root-required)
+**Helper:** `scripts/phase0-teardown.sh` (idempotent, root-required)
 
-**Post-teardown state (verified 2026-07-01):**
+Removed (verified 2026-07-01): all four test binaries under `/usr/local/{sbin,bin}/`; both test systemd units; both test dbus policies; the test udev rule; supergfxd's runtime-written `/etc/modprobe.d/supergfxd.conf`. Test services `asusd-test`, `supergfxd-test`, `nvidia-powerd` all `inactive`.
 
-Removed:
-- `/usr/local/{sbin/asusd, sbin/supergfxd, bin/asusctl, bin/supergfxctl}` ✓
-- `/etc/systemd/system/{asusd-test.service, supergfxd-test.service}` ✓
-- `/etc/dbus-1/system.d/{asusd-test.conf, supergfxd-test.conf}` ✓
-- `/etc/udev/rules.d/90-supergfxd-nvidia-pm-test.rules` ✓
-- `/etc/modprobe.d/supergfxd.conf` (runtime-written by supergfxd) ✓
-- Test services `asusd-test`, `supergfxd-test`, `nvidia-powerd` all `inactive` ✓
+Preserved (verified untouched): `/etc/modprobe.d/nvidia-custom.conf` (330 bytes, 2026-06-20 mtime); `battery-charge-threshold.service` still enabled; battery threshold `80`; thermal policy `0`; AC online `1`; kernel cmdline unchanged.
 
-Preserved user state (all untouched):
-- `/etc/modprobe.d/nvidia-custom.conf` present, 330 bytes, dated 2026-06-20 (pre-project) ✓
-- `battery-charge-threshold.service` still `enabled` ✓
-- Battery threshold at `80` (unchanged) ✓
-- Thermal policy at `0` (normal — clean idle state) ✓
-- AC online: `1` (still on AC) ✓
-- Kernel cmdline: unchanged (verified in Task 10 report) ✓
-
-**Machine is fully restored to pre-Phase 0 state.**
-
-Phase 0 verification complete. Total commits: 12 (from `4a3f627` initial to teardown commit). Total lines of docs + scripts added: ~1500. Zero product code committed. Zero user-facing behavior changed permanently.
+**Machine fully restored to pre-Phase 0 state.** Phase 0 complete: zero product code committed, zero user-facing behavior changed permanently.
