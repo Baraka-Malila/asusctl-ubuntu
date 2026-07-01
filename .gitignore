@@ -1,0 +1,42 @@
+# Debian build artifacts
+debian/build/
+debian/*.debhelper
+debian/*.substvars
+debian/files
+debian/debhelper-build-stamp
+*.deb
+*.dsc
+*.changes
+*.buildinfo
+*.tar.xz
+*.tar.gz
+*.tar.zst
+../*.deb
+../*.dsc
+../*.changes
+../*.buildinfo
+
+# Rust
+target/
+Cargo.lock.bak
+**/*.rs.bk
+
+# pbuilder / sbuild
+*.build
+*.upload
+/build/
+
+# Editor / OS junk
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Secrets and local overrides
+.env
+.env.local
+*.key
+*.pem
+credentials.json
