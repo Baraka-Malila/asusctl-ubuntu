@@ -16,7 +16,7 @@ snapshot() {
     lsmod | grep -Ei 'nvidia|nouveau|amdgpu' > "$out/modules" || true
     supergfxctl -g > "$out/mode" 2>&1 || true
     nvidia-smi -q > "$out/nvidia-smi" 2>&1 || echo "nvidia-smi unavailable" > "$out/nvidia-smi"
-    dmesg | tail -100 > "$out/dmesg_tail"
+    dmesg 2>/dev/null | tail -100 > "$out/dmesg_tail" || echo "dmesg unavailable (kernel.dmesg_restrict?)" > "$out/dmesg_tail"
     date > "$out/timestamp"
     echo "==> Snapshot saved: $out"
 }
