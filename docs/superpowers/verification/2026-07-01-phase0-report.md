@@ -362,3 +362,29 @@ We do NOT submit Ubuntu-specific PRs (PR #111 rejection precedent). All patches 
 - All findings committed to `main` on GitHub: `Baraka-Malila/asusctl-ubuntu`
 - Machine restored to pre-Phase 0 state by Task 17 (teardown)
 - Next artifact: `docs/superpowers/plans/YYYY-MM-DD-v0.1-ubuntu-packaging.md` — Plan 2, informed by these findings, starting with the 6.3.8 comparison test
+
+## Task 17 — Teardown Verification
+
+**Teardown helper:** `scripts/phase0-teardown.sh` (idempotent, root-required)
+
+**Post-teardown state (verified 2026-07-01):**
+
+Removed:
+- `/usr/local/{sbin/asusd, sbin/supergfxd, bin/asusctl, bin/supergfxctl}` ✓
+- `/etc/systemd/system/{asusd-test.service, supergfxd-test.service}` ✓
+- `/etc/dbus-1/system.d/{asusd-test.conf, supergfxd-test.conf}` ✓
+- `/etc/udev/rules.d/90-supergfxd-nvidia-pm-test.rules` ✓
+- `/etc/modprobe.d/supergfxd.conf` (runtime-written by supergfxd) ✓
+- Test services `asusd-test`, `supergfxd-test`, `nvidia-powerd` all `inactive` ✓
+
+Preserved user state (all untouched):
+- `/etc/modprobe.d/nvidia-custom.conf` present, 330 bytes, dated 2026-06-20 (pre-project) ✓
+- `battery-charge-threshold.service` still `enabled` ✓
+- Battery threshold at `80` (unchanged) ✓
+- Thermal policy at `0` (normal — clean idle state) ✓
+- AC online: `1` (still on AC) ✓
+- Kernel cmdline: unchanged (verified in Task 10 report) ✓
+
+**Machine is fully restored to pre-Phase 0 state.**
+
+Phase 0 verification complete. Total commits: 12 (from `4a3f627` initial to teardown commit). Total lines of docs + scripts added: ~1500. Zero product code committed. Zero user-facing behavior changed permanently.
