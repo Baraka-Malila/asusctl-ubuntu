@@ -169,6 +169,52 @@ cargo build --release
 
 **Status:** Both binaries are valid ELF 64-bit executables, ready for testing.
 
+## supergfxd Runtime Install Notes (Tasks 10-11)
+
+**Install helper:** `scripts/phase0-install-supergfxd-test.sh` (idempotent, root-required)
+
+**Installed to:**
+- `/usr/local/sbin/supergfxd` (binary)
+- `/usr/local/bin/supergfxctl` (binary)
+- `/etc/systemd/system/supergfxd-test.service` (ExecStart edited to `/usr/local/sbin/supergfxd`)
+- `/etc/dbus-1/system.d/supergfxd-test.conf` (dbus policy)
+- `/etc/udev/rules.d/90-supergfxd-nvidia-pm-test.rules` (runtime PM on driver bind)
+
+**Deliberately SKIPPED:** `99-nvidia-ac.rules`
+
+Upstream ships `99-nvidia-ac.rules` which starts/stops `nvidia-powerd.service` on AC power state transitions. On FA507NV this rule is a **crash trigger** — it exercises `nv_acpi_powersource_hotplug_event`, the code path that deadlocks the NVIDIA driver into a full system LOCKUP (documented in `project_nvidia_crash_pattern`). Installing it during Phase 0 would arm the crash on every plug/unplug of AC.
+
+**v0.1 packaging implication:** Our `supergfxctl` `.deb` must NOT install `99-nvidia-ac.rules` on hardware exhibiting the ACPI hotplug bug (FA507NV and likely other TUF/ROG models with the same firmware family). Options: ship the rule but disabled, skip it entirely on affected hardware via a conditional postinst, or ship a corrected rule that mitigates the crash. Decision deferred to Task 16 verdict.
+
+**Side effects of supergfxd startup on FA507NV (from journal):**
+
+1. `create_modprobe_conf: writing /etc/modprobe.d/supergfxd.conf` — supergfxd writes its own modprobe file on first run:
+   ```
+   blacklist nouveau
+   alias nouveau off
+   options nvidia-drm modeset=1
+   ```
+   **No conflict with `/etc/modprobe.d/nvidia-custom.conf`** — different options touched. But for packaging: this file is runtime-generated, must be handled as such in `.deb` (either shipped as conffile or excluded from `debian/install`).
+
+2. `["start", "nvidia-powerd.service"]` — supergfxd auto-starts `nvidia-powerd.service`. Runs continuously in Hybrid mode. This is NVIDIA's designed power daemon.
+
+3. `set_runtime_pm: Auto` — dGPU runtime PM set to auto (`/sys/bus/pci/devices/0000:01:00.0/power/control` = `auto`).
+
+4. `nvidia-drm.modeset not set, ignoring` — supergfxd looks at its own path for `nvidia-drm.modeset`, doesn't see it, moves on. Kernel cmdline does have `nvidia_drm.modeset=1` (verified `/proc/cmdline`). Non-issue for functionality, minor concern for supergfxd's config detection logic.
+
+**GPU state read (Task 11) — ✅ WORKS:**
+
+- Current mode: `Hybrid` ✓
+- Supported modes on FA507NV: `[Integrated, Hybrid, AsusMuxDgpu]`
+- Vendor: `Nvidia`
+- Power status: `active`
+- Loaded modules: `nvidia`, `nvidia_uvm`, `nvidia_drm`, `nvidia_modeset`, `nvidia_wmi_ec_backlight`, `asus_wmi`, `asus_nb_wmi`, `amdgpu`, `wmi`
+- dGPU device: `10DE:28E0` (RTX 4060 Laptop) at `0000:01:00.0`
+- dGPU audio: `10DE:22BE` at `0000:01:00.1`
+- Kernel cmdline preserved: `acpi_osi=Linux acpi_backlight=native nvidia_drm.modeset=1 pcie_aspm=off nvidia.NVreg_PreserveVideoMemoryAllocations=1`
+
+**Note on dbus object path:** Plan and both my initial guesses (`/org/asuslinux` and `/org/supergfxctl/Daemon`) were wrong. supergfxctl CLI works fine — no impact on functionality — but any GUI/dbus-client integration needs to use the exact object paths asusd/supergfxd expose. To be discovered during GUI work (v0.2).
+
 ## Recommended Actions for v0.1
 
 *(filled in by Task 16)*
