@@ -75,6 +75,68 @@ Tasks 5-8 execute against the real CLI, not the plan's assumed CLI. Report refle
 
 ## Feature Verification
 
+### Thermal Profile (Task 5) — ✅ WORKS
+
+CLI: `asusctl -p silent|normal|boost`
+
+Sysfs mapping on FA507NV (verified 2026-07-01):
+
+| CLI value | `throttle_thermal_policy` | Journal log |
+|---|---|---|
+| `normal` | `0` | `Fan mode set to: Normal` |
+| `boost` | `1` | `Fan mode set to: Boost` |
+| `silent` | `2` | `Fan mode set to: Silent` |
+
+Both fans exposed via `hwmon5` (asus): `fan1_input`, `fan2_input`. Idle at normal: ~2800/2900 RPM.
+
+**Verdict:** Ships in v0.1. Full working feature.
+
+### Fan Curves (Task 6) — ⛔ NOT EXPOSED IN CLI
+
+`asusctl` v1.0.1 CLI has no `fan-curve` subcommand. Only preset profiles via `-p`. Fan RPMs are readable from `hwmon5/fan{1,2}_input` directly, but no user-facing curve editing.
+
+**Verdict:** Not shippable as a first-class asusctl feature in v0.1. If we want fan curve editing, we ship a separate tool (or wait for upstream to re-expose).
+
+### Keyboard Backlight (Task 7) — ❌ BROKEN (upstream bug)
+
+CLI: `asusctl -k off|low|med|high` — accepted, no error output.
+
+Journal shows the daemon drops every set-command:
+
+```
+WARN: SetKeyBacklight over mpsc failed: no available capacity
+```
+
+LED sysfs `/sys/class/leds/asus::kbd_backlight/brightness` remains at `0` after all `asusctl -k` calls. Kernel-level LED control works (writing directly to sysfs as root would set brightness); asusd's internal channel is saturated.
+
+**Root cause hypothesis:** The keyboard backlight worker's mpsc channel has zero available capacity — likely a bounded channel initialized with 0-capacity or a producer not draining. This is an upstream bug in v1.0.1 on FA507NV, not a hardware gap.
+
+**Verdict:** Blocks v0.1 shipping of the feature. Candidate for an upstream PR: increase channel capacity or fix the drain logic.
+
+### Battery Charge Threshold (Task 8) — ❌ NOT AVAILABLE
+
+CLI: `asusctl -c 20-100` — accepted, no output, no journal entries, sysfs unchanged.
+
+At asusd startup: `ERROR: Charge control not available`. asusd v1.0.1 does not detect the FA507NV charge control sysfs (`/sys/class/power_supply/BAT1/charge_control_end_threshold`, which exists and works — it's what the existing `battery-charge-threshold.service` writes).
+
+Likely cause: asusd looks at a different sysfs path (possibly `BAT0` or a WMI-mediated interface) and does not fall back to `charge_control_end_threshold`.
+
+Existing `battery-charge-threshold.service` continued running throughout the test. Coexistence: no conflict, but no integration either.
+
+**Verdict:** Blocks v0.1 shipping of the feature on FA507NV. Two paths forward: (a) upstream PR making asusd detect and use `charge_control_end_threshold` as fallback, (b) ship v0.1 without charge control and document the existing systemd unit as the interim mechanism.
+
+### Summary of asusctl v1.0.1 on FA507NV
+
+| Feature | Status | v0.1 shipping? |
+|---|---|---|
+| Thermal profile | ✅ Works | Yes |
+| Fan curves | ⛔ Not in CLI | No — not exposed by upstream |
+| Keyboard backlight | ❌ Broken (mpsc bug) | Blocked pending upstream fix |
+| Charge threshold | ❌ Not available (sysfs path mismatch) | Blocked pending upstream fix |
+
+**Working:** 1 of 4. This is thin for a v0.1. Options to consider at Task 16 verdict time: submit upstream patches and wait; ship thin v0.1 with clear docs; try older stable line (6.3.8) to compare.
+
+
 ## Recommended Actions for v0.1
 
 *(filled in by Task 16)*
