@@ -35,9 +35,45 @@ cargo build --release
 
 **Status:** Both binaries are valid ELF 64-bit executables, ready for testing.
 
-## Feature Verification
+## asusd Runtime Install Notes (Task 4)
 
-*(filled in by Tasks 5-15)*
+**Install helper:** `scripts/phase0-install-asusd-test.sh` (idempotent, root-required)
+
+**Installed to:**
+- `/usr/local/sbin/asusd` (binary)
+- `/usr/local/bin/asusctl` (binary)
+- `/etc/systemd/system/asusd-test.service` (systemd unit, ExecStart edited to `/usr/local/sbin/asusd`)
+- `/etc/dbus-1/system.d/asusd-test.conf` (dbus policy — allows adm/sudo/wheel/root)
+
+**Service state:** `active` under systemd. Bus name `org.asuslinux.Daemon` claimed on system dbus. Object path is `/org/asuslinux/Daemon` (NOT `/org/asuslinux` — plan had wrong path).
+
+**Startup journal findings on FA507NV (asusd v1.0.1):**
+
+Working:
+- `INFO: Device has thermal throttle control` — thermal profile control is available
+- `INFO: Setting pstate for AMD CPU` — CPU pstate driver detected
+
+Not available (asusd could not find sysfs paths):
+- `ERROR: Charge control not available` — despite FA507NV having `charge_control_end_threshold` in sysfs (used by existing `battery-charge-threshold.service`)
+- `WARN: Failed to open AMD boost` — AMD CPU boost sysfs missing
+- `WARN: Fan mode: No such file or directory` — fan mode sysfs missing from asusd's expected path
+- `WARN: Could not get AniMe display handle: NoDevice` — expected, TUF has no AniMe Matrix
+
+**Implication for v0.1 packaging:** asusd v1.0.1 has significant feature gaps on FA507NV that the CLI does not surface as errors. The `-c` (charge limit) flag is exposed in asusctl but the daemon has already logged "not available". Behavior needs live testing to see whether writes succeed silently, fail loudly, or partially work.
+
+**CLI in v1.0.1 (from `asusctl --help`) vs plan assumptions:**
+
+| Feature | Plan assumed | Reality (v1.0.1) |
+|---|---|---|
+| Thermal profile | `asusctl profile -P Performance` | `asusctl -p silent\|normal\|boost` |
+| Fan curve | `asusctl fan-curve -g` / `-D` | **NOT EXPOSED IN CLI** |
+| Keyboard backlight | `asusctl -k low\|med\|high\|off` | Matches ✓ |
+| Battery charge | `asusctl -c` (read) and `-c 85` (write) | `asusctl -c 20-100` (write only) |
+| Subcommands | `profile`, `fan-curve` | Only `led-mode` |
+
+Tasks 5-8 execute against the real CLI, not the plan's assumed CLI. Report reflects reality.
+
+## Feature Verification
 
 ## Recommended Actions for v0.1
 
