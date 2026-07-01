@@ -2,9 +2,26 @@
 
 **Date:** 2026-07-01
 **Author:** Baraka Malila (with Claude Code brainstorming)
-**Status:** Draft, pending user review
-**Supersedes:** Nothing yet — this is v1 of the design
-**Scope:** Full project vision (Phase 0 through v0.3). Implementation plans are written per-phase — the first, covering Phase 0 and v0.1, is the immediate next artifact after this design is approved.
+**Status:** v1 — Partially superseded after Phase 0 verification and reframe
+**Scope:** Full project vision (Phase 0 through v0.3). Implementation plans are written per-phase.
+
+---
+
+> ### ⚠️ Reframe notice (2026-07-01, post-Phase 0)
+>
+> After Phase 0 verification revealed material bugs in upstream OGC asusctl v1.0.1 on FA507NV, and after a direct correction from Baraka on 2026-07-01, this project's framing shifted from "downstream packaging layer" to **independent Ubuntu-first fork with Armoury Crate feature parity as a hard goal**.
+>
+> The following sections of this v1 spec are **outdated** and superseded by the reframed recommendations doc:
+>
+> - **Section 2 non-goals** — spoke of deferring broken features to v0.2/v0.3. No feature is deferred; broken upstream features get patched in our tree for v0.1.
+> - **Section 4 Approach** — described "Pure downstream packaging layer" and "we do not fork the upstream Rust codebase." Wrong. We fork, we patch, we own the shipped binary.
+> - **Section 11 Upstream relationship** — described "additive and non-forking" and "contribute pure bugfixes upstream." We do not depend on upstream accepting anything. We ship independently.
+>
+> Current authoritative direction for v0.1: **[2026-07-01-phase0-v01-recommendations.md](../verification/2026-07-01-phase0-v01-recommendations.md)**.
+>
+> Sections not listed above (repo layout, GUI plan for v0.2, testing strategy, Ubuntu version target, BIOS handling, rollback safety) remain valid unchanged.
+
+---
 
 ---
 
