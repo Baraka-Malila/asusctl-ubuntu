@@ -43,3 +43,6 @@ credentials.json
 
 # Upstream source (fetched by scripts, not committed)
 upstream/
+
+# Claude Code session state
+.claude/
