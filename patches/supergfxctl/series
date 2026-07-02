@@ -1,0 +1,3 @@
+# patches/supergfxctl/series — quilt-compatible ordered list of patches applied to fork/supergfxctl/.
+# Each non-blank, non-# line is a filename in this directory, applied via `git am`.
+# Task 7 will add the safe replacement for 99-nvidia-ac.rules.

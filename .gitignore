@@ -44,5 +44,11 @@ credentials.json
 # Upstream source (fetched by scripts, not committed)
 upstream/
 
+# Fork working trees (built from base tag + patches/*/series)
+fork/
+
+# Test-install state records
+/var/lib/asus-phase1-fork/
+
 # Claude Code session state
 .claude/
