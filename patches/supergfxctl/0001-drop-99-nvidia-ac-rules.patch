@@ -1,0 +1,41 @@
+From 020b98f0b8cf53d40a3b0f32a428829b3b73f43c Mon Sep 17 00:00:00 2001
+From: Baraka Malila <bmalila87@gmail.com>
+Date: Thu, 2 Jul 2026 15:37:35 -0400
+Subject: [PATCH] =?UTF-8?q?Remove=20data/99-nvidia-ac.rules=20=E2=80=94=20?=
+ =?UTF-8?q?crash=20trigger=20on=20FA507NV?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Upstream ships this udev rule OPTIONAL (never installed by Makefile,
+noted as such in CHANGELOG). It starts/stops nvidia-powerd.service on
+AC power state changes, which on ASUS FA507NV exercises the
+nv_acpi_powersource_hotplug_event codepath that can deadlock the NVIDIA
+driver under GPU load — full system LOCKUP.
+
+Removing the file from the source tree prevents any downstream packager
+(us and others) from accidentally sweeping it into a .deb via
+data/*.rules glob. Belt-and-suspenders defense against a documented
+crash trigger.
+
+Motivation, prior symptoms, and detection are documented in
+docs/superpowers/specs/2026-07-02-nvidia-ac-rule-decision.md in the
+Ubuntu packaging tree.
+---
+ data/99-nvidia-ac.rules | 4 ----
+ 1 file changed, 4 deletions(-)
+ delete mode 100644 data/99-nvidia-ac.rules
+
+diff --git a/data/99-nvidia-ac.rules b/data/99-nvidia-ac.rules
+deleted file mode 100644
+index aecd212..0000000
+--- a/data/99-nvidia-ac.rules
++++ /dev/null
+@@ -1,4 +0,0 @@
+-# Stop nvidia_powerd on battery
+-SUBSYSTEM=="power_supply",ENV{POWER_SUPPLY_ONLINE}=="0",RUN+="/usr/bin/systemctl --no-block stop nvidia-powerd.service"
+-# Start nvidia_powerd on AC
+-SUBSYSTEM=="power_supply",ENV{POWER_SUPPLY_ONLINE}=="1",RUN+="/usr/bin/systemctl --no-block start nvidia-powerd.service"
+-- 
+2.34.1
+
