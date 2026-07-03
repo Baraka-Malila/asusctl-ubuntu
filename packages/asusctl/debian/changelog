@@ -1,0 +1,11 @@
+asusctl (6.3.8-1~jammy1) jammy; urgency=medium
+
+  * Phase 2b Task 3: initial Debian packaging for asusctl 6.3.8
+    (Ubuntu-first fork).
+  * Applies patches from patches/asusctl/series:
+    - 0001-power-source-sysfs-watcher (systemd 249 workaround)
+    - 0002-kbd-brightness-on-power    (opt-in kbd LED per power source)
+    - 0003-gpu-mode-per-power         (opt-in GPU mode auto-switch via
+                                       supergfxd dbus)
+
+ -- Baraka Malila <bmalila87@gmail.com>  Fri, 04 Jul 2026 00:00:00 +0000

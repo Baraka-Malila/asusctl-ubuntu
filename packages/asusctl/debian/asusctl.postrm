@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "purge" ]; then
+    if [ -f /var/lib/asusctl/batsvc-was-active ]; then
+        echo "asusctl: restoring battery-charge-threshold.service to enabled+active state."
+        systemctl enable  battery-charge-threshold.service 2>/dev/null || true
+        systemctl start   battery-charge-threshold.service 2>/dev/null || true
+        rm -f /var/lib/asusctl/batsvc-was-active
+    fi
+    rm -rf /var/lib/asusctl /etc/asusd
+fi
+
+#DEBHELPER#

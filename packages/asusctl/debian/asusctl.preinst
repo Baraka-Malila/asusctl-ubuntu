@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    install|upgrade)
+        if systemctl is-active --quiet battery-charge-threshold.service 2>/dev/null; then
+            echo "asusctl: stopping existing battery-charge-threshold.service (asusd owns charge_control_end_threshold from now on)."
+            systemctl stop battery-charge-threshold.service
+            systemctl disable battery-charge-threshold.service || true
+            mkdir -p /var/lib/asusctl
+            touch /var/lib/asusctl/batsvc-was-active
+        fi
+        ;;
+esac
+
+#DEBHELPER#
