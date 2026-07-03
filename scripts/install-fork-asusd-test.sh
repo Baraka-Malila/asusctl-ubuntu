@@ -24,9 +24,15 @@ done
 
 mkdir -p "$STATE_DIR"
 
-echo "==> Recording prior state of battery-charge-threshold.service"
-systemctl is-enabled battery-charge-threshold.service > "$STATE_DIR/batsvc.enabled" 2>&1 || echo "unknown" > "$STATE_DIR/batsvc.enabled"
-systemctl is-active  battery-charge-threshold.service > "$STATE_DIR/batsvc.active"  2>&1 || echo "unknown" > "$STATE_DIR/batsvc.active"
+# Only record prior state if we haven't already — a repeat install (without
+# an intervening teardown) must not overwrite the true pre-Phase-1 state.
+if [ ! -f "$STATE_DIR/batsvc.active" ]; then
+    echo "==> Recording prior state of battery-charge-threshold.service"
+    systemctl is-enabled battery-charge-threshold.service > "$STATE_DIR/batsvc.enabled" 2>&1 || echo "unknown" > "$STATE_DIR/batsvc.enabled"
+    systemctl is-active  battery-charge-threshold.service > "$STATE_DIR/batsvc.active"  2>&1 || echo "unknown" > "$STATE_DIR/batsvc.active"
+else
+    echo "==> Prior state already recorded at $STATE_DIR (skipping re-record)"
+fi
 
 echo "==> Stopping battery-charge-threshold.service (asusd will own the sysfs)"
 systemctl stop battery-charge-threshold.service 2>/dev/null || true

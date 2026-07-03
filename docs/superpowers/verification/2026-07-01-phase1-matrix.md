@@ -104,3 +104,57 @@ FA507NV daily-driver state fully restored.
 
 All 7 features × 4 states + 2 AC transitions = zero regressions. Both fork tree builds (asusctl 6.3.8 + supergfxctl 5.2.7 with 1 patch) verified end-to-end on real hardware. Phase 1 is complete pending the exit report.
 
+---
+
+## Task 9.5 — extended feature surface (aura + oneshot + profile automation)
+
+Added in response to the "are we really at Armoury Crate parity?" scrutiny — Phase 1's original 7 features were the shippable core, but 6.3.8's CLI exposes more surfaces that Armoury Crate users expect.
+
+### Aura keyboard LED effects — ✅ works
+
+FA507NV supports 5 of the 12 CLI-exposed modes (per `asusctl info --show-supported`): Static, Breathe, RainbowCycle, RainbowWave, Pulse. Cycled through each via `asusctl aura effect <mode> [args]`. Daemon exited 0 on every command; user visually confirmed at least 3 modes (static red/green, one rainbow variant, one breathe). Persisted config landed at `/etc/asusd/aura_tuf.ron`. The other 7 CLI modes (stars, rain, highlight, laser, ripple, comet, flash) are ROG per-key RGB and not hardware-supported on TUF — correctly reported as unsupported by the daemon.
+
+`asusctl aura power-tuf --awake true --keyboard` accepted, persisted. Controls whether the keyboard LED stays lit while system is awake, off during sleep/boot. Not visually re-tested past acceptance (config persistence is the actual verify).
+
+### Battery one-shot full charge — ✅ works
+
+`asusctl battery oneshot 100` accepted. `charge_control_end_threshold` sysfs jumped 80 → 100 immediately. **Behavior caveat:** upstream 6.3.8 updates `base_charge_control_end_threshold` in `asusd.ron` to 100 as a side-effect. On next AC unplug, `restore_charge_limit` writes 100 back — i.e., the "base" (default) is now 100, not the user's original 80. This is not a regression from our patch — it's upstream 6.3.8 behavior. Phase 2 packaging should either (a) snapshot the true user preference before install and restore on purge, or (b) patch upstream to keep oneshot side-effect-free. Filing as a Phase 2 concern.
+
+### Per-power-source profile automation — 🔧 patched (was broken on 22.04)
+
+Original config path: `platform_profile_on_ac: Performance`, `platform_profile_on_battery: Quiet`, `change_platform_profile_on_ac/battery: true`. Set via `asusctl profile set -a Performance -b Quiet`. Config persisted correctly to `/etc/asusd/asusd.ron`.
+
+**Bug discovered:** on Ubuntu 22.04 (systemd 249), automation never fires on AC plug/unplug. Root cause: asusd polls `logind.OnExternalPower` (systemd dbus property) which was introduced in systemd **250** (Ubuntu 22.10+). On 249 the property exists but doesn't update at runtime — it reads whatever value it had at daemon start. All 22.04 users hit this. Not our bug, but our fork's problem to fix.
+
+**Fix shipped as `patches/asusctl/0001-power-source-sysfs-watcher.patch`:**
+
+- Adds a second tokio task in `CtrlPlatform::create_tasks` that polls `AsusPower::get_online()` (kernel sysfs, ground truth) every 2 seconds.
+- On change, calls the same `update_policy_ac_or_bat` + `run_ac_or_bat_cmd` + `restore_charge_limit` chain the logind callback would have.
+- Additive: on systemd 250+ (24.04+) both watchers may fire on the same edge; daemon operations are idempotent, so no harm.
+
+**Bidirectional verification on FA507NV after patch:**
+
+| Edge | Journal marker | Live profile | Throttle sysfs | EPP |
+|---|---|---|---|---|
+| battery → AC (00:49:18) | `sysfs power watcher: AC state changed, plugged=true` | Performance | 1 | performance |
+| AC → battery (00:50:16) | `sysfs power watcher: AC state changed, plugged=false` | Quiet | 2 | power |
+
+Both transitions also triggered the `watch_platform_profile` inotify (bonus) which re-applied fan curves for the new profile. Full journal captured in Task 9.5 PR.
+
+### What Armoury Crate does that we still don't (Phase 3 GUI scope)
+
+- **Per-app "Game Mode"-style profile boost.** Not asusctl's job on Linux — that's `feralinteractive/gamemode`'s dbus signal. Phase 3 GUI wires our profile switcher to that signal; unprivileged processes still can't drive thermal max because gamemode requires user opt-in.
+- **Panel overdrive / PPT limits / GPU TGP / Dynamic Boost.** Kernel `asus-armoury` driver surface (upstream since 6.11; not on 22.04's 6.8). Path: `asus-armoury-dkms` package (design spec §5), which the design spec already plans for Phase 2.
+
+### Post-Phase-1 rollback (with patch)
+
+- Test daemons stopped and removed
+- `battery-charge-threshold.service`: enabled + active
+- `charge_control_end_threshold`: 80
+- `throttle_thermal_policy`: 0
+- `kbd_backlight/brightness`: 0
+- `gpu_mux_mode`: 1
+- `asusctl` / `supergfxctl`: not on PATH
+
+Also shipped a small install-script hardening in this PR: `install-fork-asusd-test.sh` no longer overwrites the recorded prior state on a second call without an intervening teardown (previously that caused teardown to restore the *middle* state instead of the true pre-Phase-1 state — bit us at end of Task 9.5).
+
