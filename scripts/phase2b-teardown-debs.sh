@@ -10,5 +10,4 @@ for pkg in asusctl-suite asus-backlight-fix asusctl supergfxctl; do
         apt-get purge -y "$pkg" || true
     fi
 done
-apt-get autoremove -y || true
 echo "==> Done"
