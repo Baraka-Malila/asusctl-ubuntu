@@ -1,0 +1,28 @@
+#!/bin/sh
+set -e
+
+INSTALLED_CONF=/etc/modprobe.d/asusctl-fa507nv-backlight-fix.conf
+TEMPLATE=/usr/share/asus-backlight-fix/nvidia_wmi_ec_backlight-blacklist.conf
+
+case "$1" in
+    configure)
+        # Race pattern = both an amdgpu-driven and an nvidia-driven backlight
+        # interface visible. This catches both "nvidia_wmi_ec_backlight is
+        # currently loaded" and the post-blacklist state where nvidia_0 is
+        # registered by the main nvidia driver anyway.
+        if ls /sys/class/backlight/amdgpu_bl* >/dev/null 2>&1 \
+           && ls /sys/class/backlight/nvidia_0    >/dev/null 2>&1 ; then
+            if [ ! -f "$INSTALLED_CONF" ]; then
+                cp "$TEMPLATE" "$INSTALLED_CONF"
+                update-initramfs -u
+                echo "asus-backlight-fix: activated (FA507NV-family hardware detected). Reboot to apply."
+            else
+                echo "asus-backlight-fix: /etc/modprobe.d entry already present; leaving alone."
+            fi
+        else
+            echo "asus-backlight-fix: skipped — hardware does not match the FA507NV race pattern. Template kept in /usr/share/asus-backlight-fix/; activate manually if needed."
+        fi
+        ;;
+esac
+
+#DEBHELPER#
