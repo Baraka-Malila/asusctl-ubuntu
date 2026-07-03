@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        if dpkg -l nvidia-prime 2>/dev/null | grep -q "^ii"; then
+            echo "supergfxctl: nvidia-prime is installed. supergfxctl and" >&2
+            echo "  nvidia-prime can coexist but may confuse each other on GPU" >&2
+            echo "  mode switches. Prefer supergfxctl for mode switching." >&2
+        fi
+        ;;
+esac
+
+#DEBHELPER#

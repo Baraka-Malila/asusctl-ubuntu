@@ -1,0 +1,7 @@
+target/release/supergfxd            usr/bin/
+target/release/supergfxctl          usr/bin/
+data/supergfxd.service              lib/systemd/system/
+data/supergfxd.preset               lib/systemd/system-preset/
+data/org.supergfxctl.Daemon.conf    usr/share/dbus-1/system.d/
+data/90-supergfxd-nvidia-pm.rules   lib/udev/rules.d/
+data/90-nvidia-screen-G05.conf      usr/share/X11/xorg.conf.d/
