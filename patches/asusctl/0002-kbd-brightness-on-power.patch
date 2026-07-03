@@ -1,0 +1,132 @@
+From f2c862474f052cdfb962778843f0f9183b5aa43f Mon Sep 17 00:00:00 2001
+From: Baraka Malila <bmalila87@gmail.com>
+Date: Fri, 3 Jul 2026 02:26:33 -0400
+Subject: [PATCH 2/2] asusd: kbd brightness auto-adjust on AC/battery
+ transitions
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Adds kbd_brightness_on_ac (default Med), kbd_brightness_on_battery
+(default Low), and change_kbd_brightness_on_power (default false, opt-in)
+to the asusd config. Also propagates the fields through the two
+migration From impls (Config611 -> Config, Config601 -> Config).
+
+When the opt-in flag is true, the Phase 1 sysfs power watcher writes
+the corresponding LedBrightness value to
+/sys/class/leds/asus::kbd_backlight/brightness on every AC state change.
+
+Direct sysfs write (not a dbus roundtrip through the aura service) is
+deliberate — asusd is already root, the sysfs path is standard-kernel,
+and it keeps the change localized to ctrl_platform.rs.
+---
+ asusd/src/config.rs        | 26 ++++++++++++++++++++++++++
+ asusd/src/ctrl_platform.rs | 20 ++++++++++++++++++++
+ 2 files changed, 46 insertions(+)
+
+diff --git a/asusd/src/config.rs b/asusd/src/config.rs
+index 842248b5..1f9dbf13 100644
+--- a/asusd/src/config.rs
++++ b/asusd/src/config.rs
+@@ -1,6 +1,7 @@
+ use std::collections::HashMap;
+ 
+ use config_traits::{StdConfig, StdConfigLoad2};
++use rog_aura::LedBrightness;
+ use rog_platform::asus_armoury::FirmwareAttribute;
+ use rog_platform::cpu::CPUEPP;
+ use rog_platform::platform::PlatformProfile;
+@@ -14,6 +15,15 @@ fn default_base_charge_limit() -> u8 {
+     0
+ }
+ 
++// Phase 2a Task 2: kbd brightness auto-adjust on AC/battery. Opt-in per
++// project policy (change_kbd_brightness_on_power defaults to false).
++fn default_kbd_brightness_on_ac() -> LedBrightness {
++    LedBrightness::Med
++}
++fn default_kbd_brightness_on_battery() -> LedBrightness {
++    LedBrightness::Low
++}
++
+ #[derive(Default, Clone, Deserialize, Serialize, PartialEq)]
+ pub struct Tuning {
+     pub enabled: bool,
+@@ -54,6 +64,13 @@ pub struct Config {
+     pub profile_performance_epp: CPUEPP,
+     pub ac_profile_tunings: Tunings,
+     pub dc_profile_tunings: Tunings,
++    // Phase 2a Task 2: kbd brightness auto-adjust. Opt-in per project policy.
++    #[serde(default = "default_kbd_brightness_on_ac")]
++    pub kbd_brightness_on_ac: LedBrightness,
++    #[serde(default = "default_kbd_brightness_on_battery")]
++    pub kbd_brightness_on_battery: LedBrightness,
++    #[serde(default)]
++    pub change_kbd_brightness_on_power: bool,
+     pub armoury_settings: HashMap<FirmwareAttribute, i32>,
+     #[serde(skip_serializing_if = "Option::is_none", default)]
+     pub screenpad_gamma: Option<f32>,
+@@ -110,6 +127,9 @@ impl Default for Config {
+             profile_custom_epp: CPUEPP::Performance,
+             ac_profile_tunings: HashMap::default(),
+             dc_profile_tunings: HashMap::default(),
++            kbd_brightness_on_ac: LedBrightness::Med,
++            kbd_brightness_on_battery: LedBrightness::Low,
++            change_kbd_brightness_on_power: false,
+             armoury_settings: HashMap::default(),
+             last_power_plugged: Default::default(),
+             screenpad_gamma: Default::default(),
+@@ -187,6 +207,9 @@ impl From<Config611> for Config {
+             last_power_plugged: c.last_power_plugged,
+             ac_profile_tunings: HashMap::default(),
+             dc_profile_tunings: HashMap::default(),
++            kbd_brightness_on_ac: default_kbd_brightness_on_ac(),
++            kbd_brightness_on_battery: default_kbd_brightness_on_battery(),
++            change_kbd_brightness_on_power: false,
+             armoury_settings: HashMap::default(),
+             screenpad_gamma: None,
+             screenpad_sync_primary: Default::default(),
+@@ -259,6 +282,9 @@ impl From<Config601> for Config {
+             last_power_plugged: c.last_power_plugged,
+             ac_profile_tunings: HashMap::default(),
+             dc_profile_tunings: HashMap::default(),
++            kbd_brightness_on_ac: default_kbd_brightness_on_ac(),
++            kbd_brightness_on_battery: default_kbd_brightness_on_battery(),
++            change_kbd_brightness_on_power: false,
+             armoury_settings: HashMap::default(),
+             screenpad_gamma: None,
+             screenpad_sync_primary: Default::default(),
+diff --git a/asusd/src/ctrl_platform.rs b/asusd/src/ctrl_platform.rs
+index 0e5403a4..703d72f4 100644
+--- a/asusd/src/ctrl_platform.rs
++++ b/asusd/src/ctrl_platform.rs
+@@ -1012,6 +1012,26 @@ impl CtrlTask for CtrlPlatform {
+                 if platform_sysfs.power.has_charge_control_end_threshold() && !plugged {
+                     platform_sysfs.restore_charge_limit().await;
+                 }
++                // Phase 2a Task 2: kbd brightness auto-adjust. Opt-in.
++                {
++                    let cfg = platform_sysfs.config.lock().await;
++                    if cfg.change_kbd_brightness_on_power {
++                        let target = if plugged {
++                            cfg.kbd_brightness_on_ac
++                        } else {
++                            cfg.kbd_brightness_on_battery
++                        };
++                        let value: u8 = target.into();
++                        drop(cfg);
++                        debug!("sysfs power watcher: kbd brightness -> {:?}", target);
++                        if let Err(err) = std::fs::write(
++                            "/sys/class/leds/asus::kbd_backlight/brightness",
++                            format!("{value}\n"),
++                        ) {
++                            warn!("Failed to write kbd_backlight brightness: {err}");
++                        }
++                    }
++                }
+                 platform_sysfs.config.lock().await.last_power_plugged = current;
+             }
+         });
+-- 
+2.34.1
+
