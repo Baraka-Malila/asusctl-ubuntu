@@ -1,0 +1,5 @@
+# Language classification hints for GitHub Linguist.
+# Our patch series carries real Rust diffs against upstream asusd. Without
+# this hint Linguist treats *.patch as generic text and reports the repo
+# as ~100% Shell.
+*.patch linguist-language=Rust
