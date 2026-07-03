@@ -1,0 +1,311 @@
+From 4e0ac3c8dfb7bf808c073f9bcac6d8b32b5a9a68 Mon Sep 17 00:00:00 2001
+From: Baraka Malila <bmalila87@gmail.com>
+Date: Fri, 3 Jul 2026 02:47:32 -0400
+Subject: [PATCH 3/3] asusd: GPU mode auto-switch on AC/battery via supergfxd
+ dbus
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Adds change_gpu_mode_on_power (opt-in), gpu_mode_on_ac (default Hybrid),
+gpu_mode_on_battery (default Integrated) to asusd config. AsusMuxDgpu
+is structurally excluded — the AutoGfxMode enum has only two variants,
+so the reboot-required mode literally cannot be a config value.
+
+New module asusd/src/supergfxd_client.rs — minimal zbus proxy to
+supergfxd (org.supergfxctl.Daemon, /org/supergfxctl/Gfx, SetMode). No
+dependency added on the supergfxctl crate; we hardcode the two u32
+discriminants we care about (Hybrid=0, Integrated=1), verified against
+supergfxctl 5.2.7's pci_device.rs GfxMode enum.
+
+Wired into the Phase 1 sysfs power watcher. The SupergfxdClient is
+built once at task-creation time and shared into the watcher via Arc.
+If supergfxd isn't reachable at daemon start (not installed, dbus
+policy misconfigured), one warning fires at start and the gpu-mode
+branch is a runtime no-op — kbd + profile automations continue to
+work normally.
+
+Log lines fire at INFO level on successful queue (visible in journal
+even without --debug). Notifications are Phase 3 GUI territory —
+sending freedesktop notifications from a system-bus daemon requires
+cross-bus user-session lookup that's too much complexity for a base
+patch, and asusctl-gui will run in the user session anyway.
+
+Session UX is inherited from supergfxd's SetMode: mode change queued,
+logout to apply (Phase 0 verified session-safe on FA507NV). Cancel
+via `supergfxctl -m <current-mode>` before logout.
+
+Also propagates the new fields through both migration From impls
+(Config611 -> Config, Config601 -> Config).
+---
+ asusd/src/config.rs           | 27 +++++++++++
+ asusd/src/ctrl_platform.rs    | 54 +++++++++++++++++++++
+ asusd/src/lib.rs              |  2 +
+ asusd/src/supergfxd_client.rs | 90 +++++++++++++++++++++++++++++++++++
+ 4 files changed, 173 insertions(+)
+ create mode 100644 asusd/src/supergfxd_client.rs
+
+diff --git a/asusd/src/config.rs b/asusd/src/config.rs
+index 1f9dbf13..a4d19bb2 100644
+--- a/asusd/src/config.rs
++++ b/asusd/src/config.rs
+@@ -7,6 +7,8 @@ use rog_platform::cpu::CPUEPP;
+ use rog_platform::platform::PlatformProfile;
+ use serde::{Deserialize, Serialize};
+ 
++use crate::supergfxd_client::AutoGfxMode;
++
+ const CONFIG_FILE: &str = "asusd.ron";
+ 
+ /// Default value for base_charge_control_end_threshold when not present in config.
+@@ -24,6 +26,15 @@ fn default_kbd_brightness_on_battery() -> LedBrightness {
+     LedBrightness::Low
+ }
+ 
++// Phase 2a Task 4: GPU mode auto-switch on AC/battery. Opt-in per project
++// policy. AsusMuxDgpu is structurally excluded from AutoGfxMode.
++fn default_gpu_mode_on_ac() -> AutoGfxMode {
++    AutoGfxMode::Hybrid
++}
++fn default_gpu_mode_on_battery() -> AutoGfxMode {
++    AutoGfxMode::Integrated
++}
++
+ #[derive(Default, Clone, Deserialize, Serialize, PartialEq)]
+ pub struct Tuning {
+     pub enabled: bool,
+@@ -71,6 +82,13 @@ pub struct Config {
+     pub kbd_brightness_on_battery: LedBrightness,
+     #[serde(default)]
+     pub change_kbd_brightness_on_power: bool,
++    // Phase 2a Task 4: GPU mode auto-switch. Opt-in per project policy.
++    #[serde(default = "default_gpu_mode_on_ac")]
++    pub gpu_mode_on_ac: AutoGfxMode,
++    #[serde(default = "default_gpu_mode_on_battery")]
++    pub gpu_mode_on_battery: AutoGfxMode,
++    #[serde(default)]
++    pub change_gpu_mode_on_power: bool,
+     pub armoury_settings: HashMap<FirmwareAttribute, i32>,
+     #[serde(skip_serializing_if = "Option::is_none", default)]
+     pub screenpad_gamma: Option<f32>,
+@@ -130,6 +148,9 @@ impl Default for Config {
+             kbd_brightness_on_ac: LedBrightness::Med,
+             kbd_brightness_on_battery: LedBrightness::Low,
+             change_kbd_brightness_on_power: false,
++            gpu_mode_on_ac: AutoGfxMode::Hybrid,
++            gpu_mode_on_battery: AutoGfxMode::Integrated,
++            change_gpu_mode_on_power: false,
+             armoury_settings: HashMap::default(),
+             last_power_plugged: Default::default(),
+             screenpad_gamma: Default::default(),
+@@ -210,6 +231,9 @@ impl From<Config611> for Config {
+             kbd_brightness_on_ac: default_kbd_brightness_on_ac(),
+             kbd_brightness_on_battery: default_kbd_brightness_on_battery(),
+             change_kbd_brightness_on_power: false,
++            gpu_mode_on_ac: default_gpu_mode_on_ac(),
++            gpu_mode_on_battery: default_gpu_mode_on_battery(),
++            change_gpu_mode_on_power: false,
+             armoury_settings: HashMap::default(),
+             screenpad_gamma: None,
+             screenpad_sync_primary: Default::default(),
+@@ -285,6 +309,9 @@ impl From<Config601> for Config {
+             kbd_brightness_on_ac: default_kbd_brightness_on_ac(),
+             kbd_brightness_on_battery: default_kbd_brightness_on_battery(),
+             change_kbd_brightness_on_power: false,
++            gpu_mode_on_ac: default_gpu_mode_on_ac(),
++            gpu_mode_on_battery: default_gpu_mode_on_battery(),
++            change_gpu_mode_on_power: false,
+             armoury_settings: HashMap::default(),
+             screenpad_gamma: None,
+             screenpad_sync_primary: Default::default(),
+diff --git a/asusd/src/ctrl_platform.rs b/asusd/src/ctrl_platform.rs
+index 703d72f4..f9b7650b 100644
+--- a/asusd/src/ctrl_platform.rs
++++ b/asusd/src/ctrl_platform.rs
+@@ -976,6 +976,22 @@ impl CtrlTask for CtrlPlatform {
+         )
+         .await;
+ 
++        // Phase 2a Task 4: build a supergfxd client once at task creation. If
++        // supergfxd isn't reachable (not installed, not started, or dbus
++        // policy misconfigured), we log a single warning here and let the
++        // watcher no-op the gpu-mode branch. This keeps kbd + profile
++        // automations running even when supergfxd is missing.
++        let supergfxd = match crate::supergfxd_client::SupergfxdClient::new().await {
++            Ok(c) => Some(std::sync::Arc::new(c)),
++            Err(e) => {
++                warn!(
++                    "supergfxd_client: could not connect ({e}). gpu-mode \
++                     auto-switch will be inactive at runtime."
++                );
++                None
++            }
++        };
++
+         // Ubuntu 22.04's systemd 249 does not reliably update logind's
+         // OnExternalPower dbus property when the kernel power_supply state
+         // changes at runtime — the property was only introduced in systemd 250.
+@@ -984,6 +1000,7 @@ impl CtrlTask for CtrlPlatform {
+         // on the same edge (systemd 250+ works), the daemon's operations are
+         // idempotent, so no harm.
+         let platform_sysfs = self.clone();
++        let supergfxd_watcher = supergfxd.clone();
+         tokio::spawn(async move {
+             let mut last_online =
+                 platform_sysfs.power.get_online().unwrap_or_default();
+@@ -1032,6 +1049,43 @@ impl CtrlTask for CtrlPlatform {
+                         }
+                     }
+                 }
++                // Phase 2a Task 4: GPU mode auto-switch. Opt-in. If supergfxd
++                // wasn't reachable at daemon start, supergfxd_watcher is None
++                // and this branch is a no-op.
++                {
++                    let cfg = platform_sysfs.config.lock().await;
++                    if cfg.change_gpu_mode_on_power {
++                        let target = if plugged {
++                            cfg.gpu_mode_on_ac
++                        } else {
++                            cfg.gpu_mode_on_battery
++                        };
++                        drop(cfg);
++                        if let Some(sg) = supergfxd_watcher.as_ref() {
++                            match sg.set_mode(target).await {
++                                Ok(user_action) => {
++                                    info!(
++                                        "sysfs power watcher: gpu-mode queued \
++                                         -> {target:?} (supergfxd user_action_required={user_action}, \
++                                         log out to apply)"
++                                    );
++                                }
++                                Err(e) => {
++                                    warn!(
++                                        "sysfs power watcher: supergfxd SetMode \
++                                         failed: {e}. gpu-mode auto-switch skipped \
++                                         for this transition."
++                                    );
++                                }
++                            }
++                        } else {
++                            debug!(
++                                "sysfs power watcher: gpu-mode auto-switch requested \
++                                 but supergfxd is not reachable — skipped"
++                            );
++                        }
++                    }
++                }
+                 platform_sysfs.config.lock().await.last_power_plugged = current;
+             }
+         });
+diff --git a/asusd/src/lib.rs b/asusd/src/lib.rs
+index 9dd36854..8bfb4304 100644
+--- a/asusd/src/lib.rs
++++ b/asusd/src/lib.rs
+@@ -15,6 +15,8 @@ pub mod aura_scsi;
+ pub mod aura_slash;
+ pub mod aura_types;
+ pub mod error;
++/// Phase 2a Task 4: minimal zbus proxy to supergfxd for GPU-mode auto-switch.
++pub mod supergfxd_client;
+ 
+ use std::future::Future;
+ use std::time::Duration;
+diff --git a/asusd/src/supergfxd_client.rs b/asusd/src/supergfxd_client.rs
+new file mode 100644
+index 00000000..c1c6a34e
+--- /dev/null
++++ b/asusd/src/supergfxd_client.rs
+@@ -0,0 +1,90 @@
++// Phase 2a Task 4: minimal zbus proxy to supergfxd for GPU-mode auto-switch.
++//
++// asusd runs on the system bus. supergfxd runs on the system bus. Both use
++// the same Connection::system() root — no cross-bus routing.
++//
++// SetMode signature (introspected on our fork's supergfxd 5.2.7):
++//   Service:   org.supergfxctl.Daemon
++//   Path:      /org/supergfxctl/Gfx
++//   Interface: org.supergfxctl.Daemon
++//   Method:    SetMode(in u mode, out u user_action)
++//
++// The `mode` argument is the u32 discriminant of supergfxctl::GfxMode. We
++// avoid pulling supergfxctl in as a build dep by hardcoding only the two
++// values we ever auto-switch to (Hybrid=0, Integrated=1). AsusMuxDgpu is
++// structurally excluded — see AutoGfxMode below.
++
++use log::{debug, warn};
++use serde::{Deserialize, Serialize};
++use zbus::proxy;
++
++/// Modes safe for automatic switching on AC/battery. Deliberately does NOT
++/// include AsusMuxDgpu — that's reboot-required, hostile UX for anything
++/// automatic.
++#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
++pub enum AutoGfxMode {
++    #[default]
++    Hybrid,
++    Integrated,
++}
++
++impl AutoGfxMode {
++    /// The u32 the supergfxctl::GfxMode enum uses on the wire.
++    /// Hybrid=0, Integrated=1 — see supergfxctl/src/pci_device.rs GfxMode.
++    pub const fn as_u32(self) -> u32 {
++        match self {
++            Self::Hybrid => 0,
++            Self::Integrated => 1,
++        }
++    }
++}
++
++#[proxy(
++    interface = "org.supergfxctl.Daemon",
++    default_service = "org.supergfxctl.Daemon",
++    default_path = "/org/supergfxctl/Gfx"
++)]
++trait SupergfxDbus {
++    async fn set_mode(&self, mode: u32) -> zbus::Result<u32>;
++}
++
++pub struct SupergfxdClient {
++    proxy: SupergfxDbusProxy<'static>,
++}
++
++impl SupergfxdClient {
++    /// Connect on the system bus. Errors if supergfxd isn't running or
++    /// its bus name isn't claimed.
++    pub async fn new() -> Result<Self, zbus::Error> {
++        let conn = zbus::Connection::system().await?;
++        let proxy = SupergfxDbusProxy::new(&conn).await?;
++        Ok(Self { proxy })
++    }
++
++    /// Queue a mode change. supergfxd handles staging (logout-required).
++    /// Returns the `UserActionRequired` u32 value supergfxd reports back
++    /// for logging.
++    pub async fn set_mode(&self, mode: AutoGfxMode) -> Result<u32, zbus::Error> {
++        debug!("supergfxd_client: SetMode({mode:?})");
++        let reply = self.proxy.set_mode(mode.as_u32()).await?;
++        debug!("supergfxd_client: SetMode reply user_action_required={reply}");
++        Ok(reply)
++    }
++}
++
++impl std::fmt::Debug for SupergfxdClient {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        f.debug_struct("SupergfxdClient").finish()
++    }
++}
++
++// Emit a warning if the module is used from a code path where supergfxd
++// isn't reachable — surfaces the miswiring at runtime rather than silently
++// no-oping.
++pub fn warn_no_supergfxd() {
++    warn!(
++        "supergfxd_client: supergfxd is not reachable on the system dbus; \
++         GPU-mode auto-switch cannot fire. Install supergfxd or turn off \
++         change_gpu_mode_on_power in asusd.ron."
++    );
++}
+-- 
+2.34.1
+

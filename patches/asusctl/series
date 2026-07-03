@@ -3,3 +3,4 @@
 # Empty for Phase 1 (base = 6.3.8 already fixes v1.0.1's kbd/charge/fan-curve bugs).
 0001-power-source-sysfs-watcher.patch
 0002-kbd-brightness-on-power.patch
+0003-gpu-mode-per-power.patch
