@@ -1,0 +1,20 @@
+Source: asusctl-suite
+Section: metapackages
+Priority: optional
+Maintainer: Baraka Malila <bmalila87@gmail.com>
+Build-Depends: debhelper-compat (= 12)
+Standards-Version: 4.6.2
+Homepage: https://github.com/Baraka-Malila/asusctl-ubuntu
+
+Package: asusctl-suite
+Architecture: all
+Depends: asusctl (>= 6.3.8-1~jammy1),
+         supergfxctl (>= 5.2.7-1~jammy1),
+         ${misc:Depends}
+Recommends: asus-backlight-fix
+Description: Full ASUS Linux control stack for Ubuntu (meta-package)
+ Installs asusd (system daemon), asusctl (CLI), supergfxd (GPU mode
+ daemon), and supergfxctl (GPU mode CLI). Recommends the FA507NV-family
+ backlight fix. This is the single entry point for most users:
+ .
+   sudo apt install asusctl-suite

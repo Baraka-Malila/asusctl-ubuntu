@@ -1,0 +1,6 @@
+asusctl-suite (1.0~jammy1) jammy; urgency=medium
+
+  * Phase 2b Task 5: initial meta-package. Pulls asusctl + supergfxctl;
+    recommends asus-backlight-fix (activated on FA507NV-family hardware).
+
+ -- Baraka Malila <bmalila87@gmail.com>  Thu, 03 Jul 2026 00:00:00 +0000
