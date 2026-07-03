@@ -1,0 +1,8 @@
+supergfxctl (5.2.7-1~jammy1) jammy; urgency=medium
+
+  * Phase 2b Task 4: initial Debian packaging for supergfxctl 5.2.7
+    (Ubuntu-first fork).
+  * Applies patches from patches/supergfxctl/series:
+    - 0001-drop-99-nvidia-ac-rules   (crash trigger removed from tree)
+
+ -- Baraka Malila <bmalila87@gmail.com>  Thu, 03 Jul 2026 00:00:00 +0000

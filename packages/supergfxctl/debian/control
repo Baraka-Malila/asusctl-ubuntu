@@ -1,0 +1,21 @@
+Source: supergfxctl
+Section: admin
+Priority: optional
+Maintainer: Baraka Malila <bmalila87@gmail.com>
+Build-Depends: debhelper-compat (= 12),
+               cargo (>= 0.66),
+               rustc (>= 1.64),
+               pkg-config,
+               quilt
+Standards-Version: 4.6.2
+Homepage: https://github.com/Baraka-Malila/asusctl-ubuntu
+
+Package: supergfxctl
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}, systemd, dbus
+Description: Manage integrated / hybrid / dedicated GPU modes on ASUS laptops
+ Ubuntu-first fork by Baraka Malila; upstream at asus-linux (GitLab).
+ Ships supergfxd (system daemon) + supergfxctl (CLI) + a safe udev rule
+ subset (deliberately excludes the AC-transition rule that crashes NVIDIA
+ driver on some TUF/ROG hardware; see the Phase 1 verification report
+ for details).
