@@ -1,0 +1,22 @@
+Source: asus-backlight-fix
+Section: admin
+Priority: optional
+Maintainer: Baraka Malila <bmalila87@gmail.com>
+Build-Depends: debhelper-compat (= 12)
+Standards-Version: 4.6.2
+Homepage: https://github.com/Baraka-Malila/asusctl-ubuntu
+
+Package: asus-backlight-fix
+Architecture: all
+Depends: initramfs-tools, ${misc:Depends}
+Description: Workaround for the FA507NV-family gsd-power backlight race
+ On ASUS TUF laptops that expose both amdgpu_bl* (real panel) and nvidia_0
+ (shadow via nvidia_wmi_ec_backlight), GNOME's power daemon races between
+ the two interfaces and the brightness slider silently no-ops ~half the
+ time. This package installs a modprobe blacklist for
+ nvidia_wmi_ec_backlight and regenerates the initramfs so only amdgpu_bl*
+ remains at boot on affected hardware.
+ .
+ On hardware that does not match the pattern, the postinst leaves the
+ blacklist file as .disabled — safe on ROG / Intel-based / non-affected
+ systems.

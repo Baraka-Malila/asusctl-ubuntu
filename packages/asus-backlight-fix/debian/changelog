@@ -1,0 +1,6 @@
+asus-backlight-fix (1.0~jammy1) jammy; urgency=medium
+
+  * Phase 2b Task 2: initial packaging for the FA507NV-family
+    backlight-shadow blacklist workaround.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Fri, 04 Jul 2026 00:00:00 +0000

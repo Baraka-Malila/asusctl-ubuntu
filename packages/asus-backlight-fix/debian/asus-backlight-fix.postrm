@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+INSTALLED_CONF=/etc/modprobe.d/asusctl-fa507nv-backlight-fix.conf
+
+case "$1" in
+    remove|purge)
+        if [ -f "$INSTALLED_CONF" ]; then
+            rm -f "$INSTALLED_CONF"
+            update-initramfs -u
+        fi
+        ;;
+esac
+
+#DEBHELPER#
