@@ -1,0 +1,11 @@
+# Jammy pbuilder config for asusctl-ubuntu Phase 2b
+DISTRIBUTION=jammy
+COMPONENTS="main universe restricted multiverse"
+MIRRORSITE=http://archive.ubuntu.com/ubuntu
+OTHERMIRROR="deb http://archive.ubuntu.com/ubuntu jammy-updates main universe restricted multiverse"
+BASETGZ=/var/cache/pbuilder/base-jammy.tgz
+BUILDPLACE=/var/cache/pbuilder/build
+BUILDRESULT=/var/cache/pbuilder/result
+APTCACHE=/var/cache/pbuilder/aptcache
+DEBBUILDOPTS="-b"
+EXTRAPACKAGES="ca-certificates gnupg"

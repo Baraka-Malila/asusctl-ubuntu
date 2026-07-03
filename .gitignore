@@ -50,5 +50,10 @@ fork/
 # Test-install state records
 /var/lib/asus-phase1-fork/
 
+# Phase 2b Debian build outputs (source packages + pbuilder results)
+packages/*/build/
+packages/*/*.orig.tar.xz
+packages/*/*.debian.tar.xz
+
 # Claude Code session state
 .claude/
