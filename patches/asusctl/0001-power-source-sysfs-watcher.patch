@@ -1,0 +1,82 @@
+From 70b73211386035bab884c6d370e5b0e4bec5b397 Mon Sep 17 00:00:00 2001
+From: Baraka Malila <bmalila87@gmail.com>
+Date: Fri, 3 Jul 2026 00:41:40 -0400
+Subject: [PATCH] asusd: add sysfs power watcher (Ubuntu 22.04 systemd 249
+ workaround)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Upstream 6.3.8 uses logind's OnExternalPower dbus property to detect
+AC/battery transitions. That property was added in systemd 250, and
+on Ubuntu 22.04 (systemd 249) it never updates at runtime — the value
+returned by the initial read is what stays forever. Consequences:
+change_platform_profile_on_ac/battery never fires on 22.04.
+
+Additive fix: spawn a second watcher in CtrlPlatform::create_tasks
+that polls AsusPower::get_online() (kernel sysfs, ground truth) every
+2 seconds and, on change, runs the same update_policy_ac_or_bat +
+run_ac_or_bat_cmd + restore_charge_limit calls the logind callback
+would have made.
+
+On systemd 250+ (Ubuntu 24.04+) both watchers may fire on the same
+edge. The daemon's operations are idempotent so there's no ill effect;
+the second watcher just no-ops.
+---
+ asusd/src/ctrl_platform.rs | 40 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/asusd/src/ctrl_platform.rs b/asusd/src/ctrl_platform.rs
+index de737f5e..0e5403a4 100644
+--- a/asusd/src/ctrl_platform.rs
++++ b/asusd/src/ctrl_platform.rs
+@@ -976,6 +976,46 @@ impl CtrlTask for CtrlPlatform {
+         )
+         .await;
+ 
++        // Ubuntu 22.04's systemd 249 does not reliably update logind's
++        // OnExternalPower dbus property when the kernel power_supply state
++        // changes at runtime — the property was only introduced in systemd 250.
++        // This breaks the logind-based watcher above on 22.04. Additive fix:
++        // also poll AsusPower::get_online() (sysfs ground truth). If both fire
++        // on the same edge (systemd 250+ works), the daemon's operations are
++        // idempotent, so no harm.
++        let platform_sysfs = self.clone();
++        tokio::spawn(async move {
++            let mut last_online =
++                platform_sysfs.power.get_online().unwrap_or_default();
++            loop {
++                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
++                let Ok(current) = platform_sysfs.power.get_online() else {
++                    continue;
++                };
++                if current == last_online {
++                    continue;
++                }
++                last_online = current;
++                let plugged = current > 0;
++                debug!("sysfs power watcher: AC state changed, plugged={plugged}");
++                if platform_sysfs.platform.has_platform_profile() {
++                    let change_epp = platform_sysfs
++                        .config
++                        .lock()
++                        .await
++                        .platform_profile_linked_epp;
++                    platform_sysfs
++                        .update_policy_ac_or_bat(plugged, change_epp)
++                        .await;
++                }
++                platform_sysfs.run_ac_or_bat_cmd(plugged).await;
++                if platform_sysfs.power.has_charge_control_end_threshold() && !plugged {
++                    platform_sysfs.restore_charge_limit().await;
++                }
++                platform_sysfs.config.lock().await.last_power_plugged = current;
++            }
++        });
++
+         // This spawns a new task for every item.
+         // TODO: find a better way to manage this
+         self.watch_charge_control_end_threshold(signal_ctxt_copy.clone())
+-- 
+2.34.1
+
