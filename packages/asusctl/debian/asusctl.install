@@ -1,0 +1,8 @@
+target/release/asusd                usr/bin/
+target/release/asusctl              usr/bin/
+target/release/asus-shutdown        usr/libexec/asusctl/
+data/asusd.service                  lib/systemd/system/
+data/asusd.conf                     usr/share/dbus-1/system.d/
+data/asusd.rules                    lib/udev/rules.d/
+data/asus-shutdown.service          lib/systemd/system/
+data/icons                          usr/share/icons/

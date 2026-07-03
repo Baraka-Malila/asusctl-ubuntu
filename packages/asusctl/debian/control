@@ -1,0 +1,24 @@
+Source: asusctl
+Section: admin
+Priority: optional
+Maintainer: Baraka Malila <bmalila87@gmail.com>
+Build-Depends: debhelper-compat (= 12),
+               cargo (>= 0.66),
+               rustc (>= 1.82),
+               libudev-dev,
+               libclang-dev,
+               libinput-dev,
+               pkg-config,
+               quilt
+Standards-Version: 4.6.2
+Homepage: https://github.com/Baraka-Malila/asusctl-ubuntu
+
+Package: asusctl
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}, systemd, dbus
+Conflicts: rog-control-center
+Description: Control fan speeds, LEDs, graphics modes, and charge levels for ASUS notebooks
+ Ubuntu-first fork by Baraka Malila; upstream at OpenGamingCollective.
+ Ships asusd (system daemon) + asusctl (CLI) + asus-shutdown (systemd
+ helper). This package does not include the Slint-based rog-control-center
+ GUI or the user-session asusd-user daemon.

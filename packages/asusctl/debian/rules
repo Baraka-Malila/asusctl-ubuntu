@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+
+# Skip binaries we don't ship in v0.1: asusd-user (session daemon) and
+# rog-control-center (Slint GUI, rejected by design).
+
+%:
+	dh $@ --with quilt
+
+override_dh_auto_build:
+	cargo build --release --workspace \
+	    --exclude asusd-user \
+	    --exclude rog-control-center \
+	    --exclude rog_simulators
+
+override_dh_auto_test:
+	# Upstream cargo tests reach hardware; skip in the pbuilder chroot.
+
+override_dh_auto_install:
+	# Handled via debian/asusctl.install (enumerated).
