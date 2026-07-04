@@ -1,0 +1,17 @@
+Subject: Lower rust-version floor from 1.82 to 1.75 for Jammy compatibility
+
+Jammy's rustc is 1.75. This patch tells cargo's version gate to accept it.
+The actual build uses rustup 1.82 in both CI and --direct builds; this only
+relaxes the version floor check.
+
+---
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -1,6 +1,6 @@
+ [workspace.package]
+ version = "6.3.8"
+-rust-version = "1.82"
++rust-version = "1.75"
+ license = "MPL-2.0"
+ readme = "README.md"
+ authors = [

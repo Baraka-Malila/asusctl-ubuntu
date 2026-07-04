@@ -8,6 +8,7 @@
 
 override_dh_auto_build:
 	cargo build --release --workspace \
+	    --offline \
 	    --exclude asusd-user \
 	    --exclude rog-control-center \
 	    --exclude rog_simulators
