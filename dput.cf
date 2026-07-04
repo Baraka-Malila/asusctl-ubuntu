@@ -1,0 +1,6 @@
+[malila-asusctl]
+fqdn = ppa.launchpad.net
+method = ftp
+incoming = ~malila/ubuntu/asusctl-ubuntu
+login = anonymous
+allow_unsigned_uploads = 0
