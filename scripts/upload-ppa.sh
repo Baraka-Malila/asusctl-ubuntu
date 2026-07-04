@@ -35,4 +35,4 @@ dput --config "$REPO_ROOT/dput.cf" malila-arch-asusctl \
     "$STAGE"/*_source.changes
 
 rm -rf "$STAGE"
-echo "==> Done. Launchpad will email bmalila87@gmail.com when the build completes."
+echo "==> Done. Launchpad will email bmalila87@gmail.com when the build completes (ppa:malila-arch/asusctl-ubuntu)."
