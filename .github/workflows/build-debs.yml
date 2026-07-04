@@ -28,10 +28,17 @@ jobs:
             libudev-dev libclang-dev libinput-dev pkg-config \
             curl ca-certificates
 
-      - name: Install rustc 1.82 via rustup
+      - name: Install GUI build dependencies (Noble only)
+        if: matrix.distro == 'noble'
+        run: |
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-4-dev libadwaita-1-dev libdbus-1-dev libevdev-dev \
+            libglib2.0-dev
+
+      - name: Install rustc 1.85 via rustup
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
-            sh -s -- -y --default-toolchain 1.82 --profile minimal
+            sh -s -- -y --default-toolchain 1.85.0 --profile minimal
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Build source + binary packages
@@ -40,6 +47,12 @@ jobs:
             bash scripts/build-source-package.sh "$pkg" "${{ matrix.distro }}"
             bash scripts/build-deb-pbuilder.sh "$pkg" "${{ matrix.distro }}" --direct
           done
+          if [ "${{ matrix.distro }}" = "noble" ]; then
+            for pkg in utu asus-suite; do
+              bash scripts/build-source-package.sh "$pkg" "${{ matrix.distro }}"
+              bash scripts/build-deb-pbuilder.sh "$pkg" "${{ matrix.distro }}" --direct
+            done
+          fi
 
       - name: Lintian
         run: |

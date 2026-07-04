@@ -1,0 +1,21 @@
+Source: asus-suite
+Section: metapackages
+Priority: optional
+Maintainer: Baraka Malila <bmalila87@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://github.com/Baraka-Malila/asusctl-ubuntu
+
+Package: asus-suite
+Architecture: all
+Depends: asusctl (>= 6.3.8-1~noble1),
+         supergfxctl (>= 5.2.7-1~noble1),
+         utu,
+         ${misc:Depends}
+Recommends: asus-backlight-fix
+Description: Full ASUS Linux control stack for Ubuntu 24.04 (meta-package)
+ Installs asusd (system daemon), asusctl (CLI), supergfxd (GPU mode
+ daemon), supergfxctl (GPU mode CLI), and the utu GTK4/libadwaita
+ control centre. Single entry point for ASUS laptop users on Noble:
+ .
+   sudo apt install asus-suite
