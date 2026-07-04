@@ -31,7 +31,7 @@ echo "==> Building signed source package for $PKGNAME ($DISTRO)"
 debsign "$STAGE"/*_source.changes
 
 echo "==> Uploading to ppa:malila/asusctl-ubuntu"
-dput --config "$REPO_ROOT/dput.cf" malila-asusctl \
+dput --config "$REPO_ROOT/dput.cf" malila-arch-asusctl \
     "$STAGE"/*_source.changes
 
 rm -rf "$STAGE"

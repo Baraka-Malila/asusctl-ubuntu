@@ -9,7 +9,7 @@
 ## Steps
 
 ```bash
-sudo add-apt-repository ppa:malila/asusctl-ubuntu
+sudo add-apt-repository ppa:malila-arch/asusctl-ubuntu
 sudo apt update
 sudo apt install asusctl-suite
 reboot
@@ -44,5 +44,5 @@ supergfxctl -m Integrated     # iGPU only (lowest power)
 
 ```bash
 sudo apt purge asusctl-suite asusctl supergfxctl asus-backlight-fix
-sudo add-apt-repository --remove ppa:malila/asusctl-ubuntu
+sudo add-apt-repository --remove ppa:malila-arch/asusctl-ubuntu
 ```

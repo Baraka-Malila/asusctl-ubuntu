@@ -1,19 +1,19 @@
 # Launchpad PPA Setup
 
-One-time setup for `ppa:malila/asusctl-ubuntu`. Do this once before the first
+One-time setup for `ppa:malila-arch/asusctl-ubuntu`. Do this once before the first
 upload. All steps are on your local machine.
 
 ## 1. Create a Launchpad account
 
 Go to https://launchpad.net and sign up. When asked for a username, enter:
-`malila`
+`malila-arch`
 
 (Username is changeable before the first upload with zero cost to users.)
 
 ## 2. Create the PPA
 
 After logging in, go to:
-https://launchpad.net/~malila/+activate-ppa
+https://launchpad.net/~malila-arch/+activate-ppa
 
 Fill in:
 - Name: `asusctl-ubuntu`
@@ -31,7 +31,7 @@ At the prompts:
 - Key size: 4096
 - Expiry: 0 (does not expire)
 - Real name: Baraka Malila
-- Email: bmalila87@gmail.com
+- Email: bmalila-arch87@gmail.com
 - Comment: (leave blank, press Enter)
 - Passphrase: choose a strong one
 
@@ -39,7 +39,7 @@ At the prompts:
 
 ```bash
 # Find your key ID (the long hex string after rsa4096/)
-gpg --list-secret-keys --keyid-format LONG bmalila87@gmail.com
+gpg --list-secret-keys --keyid-format LONG bmalila-arch87@gmail.com
 # Example output:
 # sec   rsa4096/ABCD1234EFGH5678 2026-07-03 [SC]
 
@@ -51,16 +51,16 @@ gpg --keyserver keyserver.ubuntu.com --send-keys ABCD1234EFGH5678
 
 Get your key fingerprint:
 ```bash
-gpg --fingerprint bmalila87@gmail.com
+gpg --fingerprint bmalila-arch87@gmail.com
 ```
 
 Copy the fingerprint (40 hex chars with spaces, like
 `XXXX XXXX XXXX XXXX XXXX  XXXX XXXX XXXX XXXX XXXX`).
 
-Go to: https://launchpad.net/~malila/+editpgpkeys
+Go to: https://launchpad.net/~malila-arch/+editpgpkeys
 Paste the fingerprint and click "Import Key".
 
-Launchpad emails `bmalila87@gmail.com` with an encrypted confirmation message.
+Launchpad emails `bmalila-arch87@gmail.com` with an encrypted confirmation message.
 Decrypt it to get the confirmation link:
 ```bash
 # Paste the encrypted block (everything between ---BEGIN and ---END), then Ctrl+D
@@ -78,7 +78,7 @@ sudo apt-get install -y devscripts dput
 ## 7. Verify setup
 
 ```bash
-gpg --list-secret-keys bmalila87@gmail.com   # should list your key
+gpg --list-secret-keys bmalila-arch87@gmail.com   # should list your key
 dput --version                                # should print a version number
 ```
 
@@ -100,7 +100,7 @@ for pkg in asus-backlight-fix asusctl supergfxctl asusctl-suite; do
 done
 ```
 
-Launchpad emails `bmalila87@gmail.com` when each build completes (~10–20 min).
+Launchpad emails `bmalila-arch87@gmail.com` when each build completes (~10–20 min).
 If a build fails, the email contains the build log URL.
 
 ## Releasing a new upstream version
