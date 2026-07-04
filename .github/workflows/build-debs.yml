@@ -1,0 +1,54 @@
+name: Build Debian packages
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            distro: jammy
+          - runner: ubuntu-24.04
+            distro: noble
+    runs-on: ${{ matrix.runner }}
+    name: build (${{ matrix.distro }})
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            debhelper devscripts lintian dpkg-dev quilt \
+            libudev-dev libclang-dev libinput-dev pkg-config \
+            curl ca-certificates
+
+      - name: Install rustc 1.82 via rustup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+            sh -s -- -y --default-toolchain 1.82 --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Build source + binary packages
+        run: |
+          for pkg in asus-backlight-fix asusctl supergfxctl asusctl-suite; do
+            bash scripts/build-source-package.sh "$pkg" "${{ matrix.distro }}"
+            bash scripts/build-deb-pbuilder.sh "$pkg" "${{ matrix.distro }}" --direct
+          done
+
+      - name: Lintian
+        run: |
+          find packages/*/build/${{ matrix.distro }} -maxdepth 1 -name '*.deb' \
+            -exec lintian --fail-on error {} \;
+
+      - name: Upload .deb artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: debs-${{ matrix.distro }}
+          path: packages/*/build/${{ matrix.distro }}/*.deb
+          if-no-files-found: error
