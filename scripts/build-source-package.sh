@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-# Phase 2b: generate a 3.0 (quilt) source package for one of our packages.
+# Generate a Debian source package for one of our packages.
 #   Usage: scripts/build-source-package.sh <pkgname>
 #
-# Requires packages/<pkgname>/upstream.env exporting:
-#   TARBALL_URL   — where to fetch upstream .orig.tar.gz
-#   UPSTREAM_TAG  — matches the version in debian/changelog
-#   ORIG_NAME     — the .orig.tar.xz basename (without _<ver>.orig.tar.xz suffix)
-# For packages with no upstream (asus-backlight-fix, asusctl-suite):
-#   NO_UPSTREAM=1 — script skips tarball fetch, uses debian/ + files/ as-is
+# upstream.env exports:
+#   UPSTREAM_TAG, ORIG_NAME, TARBALL_URL
+#   CARGO_PKG=1  (optional) — run cargo vendor + add .cargo/config.toml
+#   NO_UPSTREAM=1 — skip tarball fetch; use debian/ + files/ as-is
 set -euo pipefail
 
 PKGNAME="${1:?usage: $0 <pkgname>}"
@@ -23,7 +21,6 @@ source "$PKG_DIR/upstream.env"
 mkdir -p "$BUILD_DIR"
 
 if [ "${NO_UPSTREAM:-0}" = "1" ]; then
-    # Meta / files-only packages: build source directly from packages/<pkg>/
     STAGE="$BUILD_DIR/stage"
     rm -rf "$STAGE" && mkdir -p "$STAGE"
     cp -a "$PKG_DIR/debian" "$STAGE/"
@@ -39,7 +36,26 @@ if [ ! -f "$ORIG_TARBALL" ]; then
     echo "==> Fetching $TARBALL_URL"
     TMPGZ=$(mktemp --suffix=.tar.gz)
     curl -fsSL "$TARBALL_URL" -o "$TMPGZ"
-    gunzip -c "$TMPGZ" | xz -c > "$ORIG_TARBALL"
+
+    if [ "${CARGO_PKG:-0}" = "1" ]; then
+        echo "==> Running cargo vendor (takes several minutes on first run)"
+        VSTAGE=$(mktemp -d)
+        tar -xf "$TMPGZ" -C "$VSTAGE"
+        SRCDIR=$(ls "$VSTAGE")
+        (cd "$VSTAGE/$SRCDIR" && cargo vendor vendor/)
+        mkdir -p "$VSTAGE/$SRCDIR/.cargo"
+        cat > "$VSTAGE/$SRCDIR/.cargo/config.toml" <<'CARGO_CONF'
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"
+CARGO_CONF
+        tar -cJf "$ORIG_TARBALL" -C "$VSTAGE" "$SRCDIR"
+        rm -rf "$VSTAGE"
+    else
+        gunzip -c "$TMPGZ" | xz -c > "$ORIG_TARBALL"
+    fi
     rm -f "$TMPGZ"
 fi
 

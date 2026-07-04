@@ -3,7 +3,7 @@
 	dh $@ --with quilt
 
 override_dh_auto_build:
-	cargo build --release --features "daemon cli"
+	cargo build --release --offline --features "daemon cli"
 
 override_dh_auto_test:
 	# Upstream cargo tests reach hardware; skip in the pbuilder chroot.
