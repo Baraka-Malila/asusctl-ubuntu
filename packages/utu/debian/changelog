@@ -1,4 +1,4 @@
-utu (0.1.0~noble1) noble; urgency=medium
+utu (0.1.0-1~noble1) noble; urgency=medium
 
   * Phase 3: initial utu release — fork of Ayuz adapted for Ubuntu/GNOME
   * Add Armoury Crate key handler (KEY_PROG1 raises window)
