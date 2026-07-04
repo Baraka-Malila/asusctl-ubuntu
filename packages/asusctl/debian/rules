@@ -6,9 +6,14 @@
 %:
 	dh $@ --with quilt
 
+override_dh_auto_clean:
+	# Upstream Makefile distclean removes vendor/ and .cargo/ which we ship
+	# in the orig tarball for offline Launchpad builds — skip it.
+
 override_dh_auto_build:
 	cargo build --release --workspace \
 	    --offline \
+	    --ignore-rust-version \
 	    --exclude asusd-user \
 	    --exclude rog-control-center \
 	    --exclude rog_simulators
