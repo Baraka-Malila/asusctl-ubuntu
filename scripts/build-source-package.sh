@@ -47,15 +47,28 @@ if [ ! -f "$ORIG_TARBALL" ]; then
         VSTAGE=$(mktemp -d)
         tar -xf "$TMPGZ" -C "$VSTAGE"
         SRCDIR=$(ls "$VSTAGE")
-        (cd "$VSTAGE/$SRCDIR" && cargo vendor vendor/)
+        # Capture vendor output — it includes git-source redirects as well as crates-io
         mkdir -p "$VSTAGE/$SRCDIR/.cargo"
-        cat > "$VSTAGE/$SRCDIR/.cargo/config.toml" <<'CARGO_CONF'
-[source.crates-io]
-replace-with = "vendored-sources"
-
-[source.vendored-sources]
-directory = "vendor"
-CARGO_CONF
+        (cd "$VSTAGE/$SRCDIR" && cargo vendor vendor/) \
+            > "$VSTAGE/$SRCDIR/.cargo/config.toml"
+        # cargo vendor creates Cargo.toml.orig beside each crate's Cargo.toml (original
+        # before dep-normalization). dh_clean/dpkg-source --after-build deletes them via
+        # quilt clean, but .cargo-checksum.json still lists them → cargo build fails.
+        # Strip them from both the filesystem and the checksums before packaging.
+        find "$VSTAGE/$SRCDIR/vendor" -name "Cargo.toml.orig" -delete
+        python3 - "$VSTAGE/$SRCDIR/vendor" <<'PY'
+import json, os, sys
+vendor = sys.argv[1]
+for crate in os.listdir(vendor):
+    p = os.path.join(vendor, crate, ".cargo-checksum.json")
+    if not os.path.exists(p):
+        continue
+    with open(p) as f:
+        d = json.load(f)
+    d["files"] = {k: v for k, v in d["files"].items() if not k.endswith(".orig")}
+    with open(p, "w") as f:
+        json.dump(d, f, separators=(",", ":"))
+PY
         tar -cJf "$ORIG_TARBALL" -C "$VSTAGE" "$SRCDIR"
         rm -rf "$VSTAGE"
     else
