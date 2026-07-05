@@ -6,8 +6,15 @@ export PATH := $(HOME)/.cargo/bin:$(PATH)
 %:
 	dh $@
 
+override_dh_auto_configure:
+	# Noble's apt rustc (1.75) is too old for relm4/zbus deps (need ≥1.92).
+	# Install a compatible toolchain via rustup if the system one is too old.
+	if ! rustc --version 2>/dev/null | awk '{split($$2,v,"."); exit !(v[1]>1 || (v[1]==1 && v[2]>=92))}'; then \
+	    curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.92.0 --no-modify-path --profile minimal; \
+	fi
+
 override_dh_auto_build:
-	cargo build --release --offline --ignore-rust-version
+	PATH="$(HOME)/.cargo/bin:$(PATH)" cargo build --release --offline --ignore-rust-version
 
 override_dh_auto_install:
 	install -Dm755 target/release/utu \
