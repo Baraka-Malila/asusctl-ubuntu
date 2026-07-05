@@ -10,12 +10,6 @@ override_dh_auto_clean:
 	# Upstream Makefile distclean removes vendor/ and .cargo/ which we ship
 	# in the orig tarball for offline Launchpad builds — skip it.
 
-override_dh_auto_configure:
-	# Ensure cargo >=1.85 is available to handle vendor crates using edition="2024".
-	if ! cargo --version 2>/dev/null | awk '{split($$2,v,"."); exit !(v[1]>1 || (v[1]==1 && v[2]>=85))}'; then \
-	    curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.85.0 --no-modify-path --profile minimal; \
-	fi
-
 override_dh_auto_build:
 	# cargo vendor (1.79+) writes Cargo.toml.orig into each crate and lists it in
 	# .cargo-checksum.json. dh_clean runs quilt clean which deletes all *.orig files,

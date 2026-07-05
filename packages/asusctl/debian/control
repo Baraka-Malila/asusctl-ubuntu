@@ -10,9 +10,7 @@ Build-Depends: debhelper-compat (= 12),
                libinput-dev,
                pkg-config,
                quilt,
-               python3,
-               curl,
-               ca-certificates
+               python3
 Standards-Version: 4.6.2
 Homepage: https://github.com/Baraka-Malila/asusctl-ubuntu
 

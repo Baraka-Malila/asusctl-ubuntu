@@ -1,3 +1,13 @@
+supergfxctl (5.2.7-4~jammy1) jammy; urgency=medium
+
+  * Fix Launchpad build: remove override_dh_auto_configure — Launchpad
+    chroots have no internet access, so curl to sh.rustup.rs fails and
+    exits non-zero, killing the build. supergfxctl has no edition=2024
+    vendor crates so apt cargo 1.75 builds it directly.
+  * Remove curl, ca-certificates from Build-Depends (unused).
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
 supergfxctl (5.2.7-3~jammy1) jammy; urgency=medium
 
   * Add python3, curl, ca-certificates to Build-Depends.

@@ -1,3 +1,14 @@
+utu (0.1.2-1~noble1) noble; urgency=medium
+
+  * Restore src/main.rs — emptied by the rename commit; fixes build
+    error "main function not found in crate utu".
+  * Fix Launchpad build: remove curl/rustup configure block (Launchpad
+    chroots have no internet access). Patch Cargo.toml edition="2024"→"2021"
+    at build time; Noble's apt cargo 1.75 cannot parse edition 2024.
+  * Remove curl, ca-certificates from Build-Depends; add python3.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
 utu (0.1.1-1~noble1) noble; urgency=medium
 
   * Remove gtk4-layer-shell dependency: not packaged for Ubuntu 24.04.

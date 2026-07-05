@@ -2,9 +2,9 @@ Source: utu
 Section: gnome
 Priority: optional
 Maintainer: Baraka Malila <bmalila87@gmail.com>
-Build-Depends: debhelper-compat (= 13), cargo, pkg-config,
+Build-Depends: debhelper-compat (= 13), cargo, python3, pkg-config,
  libgtk-4-dev (>= 4.14), libadwaita-1-dev (>= 1.5),
- libdbus-1-dev, libevdev-dev, curl, ca-certificates
+ libdbus-1-dev, libevdev-dev
 Standards-Version: 4.6.2
 Homepage: https://github.com/Baraka-Malila/utu
 Rules-Requires-Root: no
