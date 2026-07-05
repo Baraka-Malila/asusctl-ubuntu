@@ -1,3 +1,11 @@
+utu (0.1.4-2~noble1) noble; urgency=medium
+
+  * Fix dh_auto_install: $(DESTDIR) is empty for custom override rules —
+    use debian/utu/ staging directory directly. Adds explicit mkdir for
+    /usr/share/utu before copying anime assets.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
 utu (0.1.4-1~noble1) noble; urgency=medium
 
   * Fix let-chain syntax in evdev_runner.rs and numberpad.rs: rewritten as

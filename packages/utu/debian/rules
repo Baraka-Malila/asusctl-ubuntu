@@ -16,12 +16,13 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	install -Dm755 target/release/utu \
-		$(DESTDIR)/usr/bin/utu
+		debian/utu/usr/bin/utu
 	install -Dm644 debian/utu.desktop \
-		$(DESTDIR)/usr/share/applications/io.github.baraka_malila.utu.desktop
+		debian/utu/usr/share/applications/io.github.baraka_malila.utu.desktop
 	install -Dm644 assets/trayicon.png \
-		$(DESTDIR)/usr/share/icons/hicolor/128x128/apps/io.github.baraka_malila.utu.png
-	cp -r assets/anime $(DESTDIR)/usr/share/utu/anime
+		debian/utu/usr/share/icons/hicolor/128x128/apps/io.github.baraka_malila.utu.png
+	install -d debian/utu/usr/share/utu
+	cp -r assets/anime debian/utu/usr/share/utu/anime
 
 override_dh_auto_test:
 	# no automated tests
