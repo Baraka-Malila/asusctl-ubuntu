@@ -1,3 +1,18 @@
+asusctl (6.3.8-2~jammy1) jammy; urgency=medium
+
+  * Fix offline Launchpad build failures:
+    - Skip upstream make distclean (override_dh_auto_clean) to preserve
+      the vendored crates shipped in the orig tarball.
+    - Lower Build-Depends rustc floor from 1.82 to 1.75 and pass
+      --ignore-rust-version to cargo build.
+    - Strip stale Cargo.toml.orig references from vendor checksums at
+      build time (cargo vendor creates them; quilt cleanup deletes them).
+    - Capture full cargo vendor stdout as .cargo/config.toml so that
+      git-sourced dependencies are also redirected offline.
+    - Add 0004-rust-version-floor.patch to lower workspace rust-version.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
 asusctl (6.3.8-1~jammy1) jammy; urgency=medium
 
   * Phase 2b Task 3: initial Debian packaging for asusctl 6.3.8

@@ -1,3 +1,10 @@
+utu (0.1.0-2~noble1) noble; urgency=medium
+
+  * Add missing Build-Depends: libgtk4-layer-shell-dev
+    (gtk4-layer-shell-sys crate requires the native library at build time).
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
 utu (0.1.0-1~noble1) noble; urgency=medium
 
   * Phase 3: initial utu release — fork of Ayuz adapted for Ubuntu/GNOME
