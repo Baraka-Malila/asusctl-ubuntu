@@ -1,3 +1,16 @@
+utu (0.1.3-1~noble1) noble; urgency=medium
+
+  * Restore src/tray.rs — blanked by the same rename commit that emptied
+    main.rs; renames AyuzTray → UtuTray.
+  * Fix adw::ViewStack API: remove set_transition_duration / set_enable_transitions
+    (dropped in libadwaita 0.7+, unavailable on Noble's 1.5 package).
+  * Fix zbus 5 compat: receive_brightness_changed() returns PropertyStream
+    directly — remove stale Result match in oled_dimming.rs.
+  * Fix GString conversion in gpu.rs: use &*t!() to deref Cow→&str for
+    adw::AlertDialog heading/body builders.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
 utu (0.1.2-1~noble1) noble; urgency=medium
 
   * Restore src/main.rs — emptied by the rename commit; fixes build
