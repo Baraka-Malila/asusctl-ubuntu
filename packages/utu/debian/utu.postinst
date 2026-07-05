@@ -1,0 +1,22 @@
+#!/bin/sh
+# postinst for utu
+set -e
+
+case "$1" in
+    configure)
+        # Create the i2c group if it does not exist.
+        # Users need to be added manually: sudo usermod -aG i2c $USER
+        if ! getent group i2c > /dev/null 2>&1; then
+            addgroup --system i2c
+        fi
+
+        # Reload udev rules and re-trigger i2c devices so the new
+        # group and mode take effect without a reboot.
+        if command -v udevadm > /dev/null 2>&1; then
+            udevadm control --reload-rules || true
+            udevadm trigger --action=change --subsystem-match=i2c-dev || true
+        fi
+        ;;
+esac
+
+#DEBHELPER#

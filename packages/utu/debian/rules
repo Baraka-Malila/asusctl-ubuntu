@@ -23,6 +23,8 @@ override_dh_auto_install:
 		debian/utu/usr/share/icons/hicolor/128x128/apps/io.github.baraka_malila.utu.png
 	install -d debian/utu/usr/share/utu
 	cp -r assets/anime debian/utu/usr/share/utu/anime
+	install -Dm644 debian/99-utu-i2c.rules \
+		debian/utu/lib/udev/rules.d/99-utu-i2c.rules
 
 override_dh_auto_test:
 	# no automated tests
