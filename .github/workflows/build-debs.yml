@@ -33,7 +33,7 @@ jobs:
         run: |
           sudo apt-get install -y --no-install-recommends \
             libgtk-4-dev libadwaita-1-dev libdbus-1-dev libevdev-dev \
-            libglib2.0-dev libgtk4-layer-shell-dev
+            libglib2.0-dev
 
       - name: Install rustc via rustup
         run: |
