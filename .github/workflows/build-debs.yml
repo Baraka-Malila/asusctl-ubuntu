@@ -35,10 +35,10 @@ jobs:
             libgtk-4-dev libadwaita-1-dev libdbus-1-dev libevdev-dev \
             libglib2.0-dev
 
-      - name: Install rustc 1.85 via rustup
+      - name: Install rustc via rustup
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
-            sh -s -- -y --default-toolchain 1.85.0 --profile minimal
+            sh -s -- -y --default-toolchain 1.92.0 --profile minimal
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Build source + binary packages
