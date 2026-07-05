@@ -1,9 +1,21 @@
 #!/usr/bin/make -f
+export DH_VERBOSE = 1
+export CARGO_HOME = $(CURDIR)/debian/cargo-home
+export PATH := $(HOME)/.cargo/bin:$(PATH)
+
 %:
 	dh $@ --with quilt
 
+override_dh_auto_clean:
+	# Upstream Makefile distclean removes vendor/ and .cargo/ which we ship
+	# in the orig tarball for offline Launchpad builds — skip it.
+
 override_dh_auto_build:
-	cargo build --release --offline --features "daemon cli"
+	# cargo vendor (1.79+) writes Cargo.toml.orig into each crate and lists it in
+	# .cargo-checksum.json. dh_clean runs quilt clean which deletes all *.orig files,
+	# leaving stale checksum entries that make cargo fail. Strip them before building.
+	python3 -c "import json,os;[json.dump(dict(d,files={k:v for k,v in d['files'].items() if not k.endswith('.orig')}),open(p,'w'),separators=(',',':')) for c in(os.listdir('vendor')if os.path.isdir('vendor')else[])for p in[os.path.join('vendor',c,'.cargo-checksum.json')]if os.path.exists(p)for d in[json.load(open(p))]]"
+	cargo build --release --offline --ignore-rust-version --features "daemon cli"
 
 override_dh_auto_test:
 	# Upstream cargo tests reach hardware; skip in the pbuilder chroot.

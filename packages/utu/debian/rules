@@ -1,0 +1,28 @@
+#!/usr/bin/make -f
+export DH_VERBOSE = 1
+export CARGO_HOME = $(CURDIR)/debian/cargo-home
+export PATH := $(HOME)/.cargo/bin:$(PATH)
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Noble's apt cargo 1.75 cannot parse edition="2024". utu doesn't use 2024-only
+	# syntax, so patching the manifest to edition="2021" is safe.
+	sed -i 's/^edition = "2024"$$/edition = "2021"/' Cargo.toml
+	# Safety net: strip any stale Cargo.toml.orig checksum entries from vendor/.
+	python3 -c "import json,os;[json.dump(dict(d,files={k:v for k,v in d['files'].items() if not k.endswith('.orig')}),open(p,'w'),separators=(',',':')) for c in(os.listdir('vendor')if os.path.isdir('vendor')else[])for p in[os.path.join('vendor',c,'.cargo-checksum.json')]if os.path.exists(p)for d in[json.load(open(p))]]"
+	cargo build --release --offline --ignore-rust-version
+
+override_dh_auto_install:
+	install -Dm755 target/release/utu \
+		debian/utu/usr/bin/utu
+	install -Dm644 debian/utu.desktop \
+		debian/utu/usr/share/applications/io.github.baraka_malila.utu.desktop
+	install -Dm644 assets/trayicon.png \
+		debian/utu/usr/share/icons/hicolor/128x128/apps/io.github.baraka_malila.utu.png
+	install -d debian/utu/usr/share/utu
+	cp -r assets/anime debian/utu/usr/share/utu/anime
+
+override_dh_auto_test:
+	# no automated tests

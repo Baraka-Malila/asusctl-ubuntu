@@ -1,0 +1,55 @@
+utu (0.1.4-2~noble1) noble; urgency=medium
+
+  * Fix dh_auto_install: $(DESTDIR) is empty for custom override rules —
+    use debian/utu/ staging directory directly. Adds explicit mkdir for
+    /usr/share/utu before copying anime assets.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
+utu (0.1.4-1~noble1) noble; urgency=medium
+
+  * Fix let-chain syntax in evdev_runner.rs and numberpad.rs: rewritten as
+    nested if-let blocks — edition="2021" rejects if-let && bool and
+    if-let && let chains (they require edition="2024").
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
+utu (0.1.3-1~noble1) noble; urgency=medium
+
+  * Restore src/tray.rs — blanked by the same rename commit that emptied
+    main.rs; renames AyuzTray → UtuTray.
+  * Fix adw::ViewStack API: remove set_transition_duration / set_enable_transitions
+    (dropped in libadwaita 0.7+, unavailable on Noble's 1.5 package).
+  * Fix zbus 5 compat: receive_brightness_changed() returns PropertyStream
+    directly — remove stale Result match in oled_dimming.rs.
+  * Fix GString conversion in gpu.rs: use &*t!() to deref Cow→&str for
+    adw::AlertDialog heading/body builders.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
+utu (0.1.2-1~noble1) noble; urgency=medium
+
+  * Restore src/main.rs — emptied by the rename commit; fixes build
+    error "main function not found in crate utu".
+  * Fix Launchpad build: remove curl/rustup configure block (Launchpad
+    chroots have no internet access). Patch Cargo.toml edition="2024"→"2021"
+    at build time; Noble's apt cargo 1.75 cannot parse edition 2024.
+  * Remove curl, ca-certificates from Build-Depends; add python3.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
+utu (0.1.1-1~noble1) noble; urgency=medium
+
+  * Remove gtk4-layer-shell dependency: not packaged for Ubuntu 24.04.
+    Fan OSD still shows as a regular undecorated window.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
+utu (0.1.0-1~noble1) noble; urgency=medium
+
+  * Phase 3: initial utu release — fork of Ayuz adapted for Ubuntu/GNOME
+  * Add Armoury Crate key handler (KEY_PROG1 raises window)
+  * Add GDM3 restart prompt after GPU mode switch
+  * Replace KDE brightness D-Bus with GNOME SettingsDaemon
+
+ -- Baraka Malila <bmalila87@gmail.com>  Fri, 04 Jul 2026 00:00:00 +0000

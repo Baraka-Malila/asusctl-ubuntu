@@ -1,0 +1,6 @@
+asus-suite (1.0~noble1) noble; urgency=medium
+
+  * Phase 3: new Noble-only meta-package with utu GUI
+  * Depends on asusctl + supergfxctl + utu; recommends asus-backlight-fix
+
+ -- Baraka Malila <bmalila87@gmail.com>  Fri, 04 Jul 2026 00:00:00 +0000

@@ -1,3 +1,40 @@
+supergfxctl (5.2.7-5~jammy1) jammy; urgency=medium
+
+  * Add --ignore-rust-version to cargo build: zvariant_utils v3.2.0 in the
+    vendor tree declares rustc-requires = "1.77" but Noble's apt cargo is
+    1.75. The flag suppresses the version check so apt cargo builds it fine.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
+supergfxctl (5.2.7-4~jammy1) jammy; urgency=medium
+
+  * Fix Launchpad build: remove override_dh_auto_configure — Launchpad
+    chroots have no internet access, so curl to sh.rustup.rs fails and
+    exits non-zero, killing the build. supergfxctl has no edition=2024
+    vendor crates so apt cargo 1.75 builds it directly.
+  * Remove curl, ca-certificates from Build-Depends (unused).
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
+supergfxctl (5.2.7-3~jammy1) jammy; urgency=medium
+
+  * Add python3, curl, ca-certificates to Build-Depends.
+  * Install cargo >=1.85 via rustup at configure time for consistency
+    with asusctl (guards against future vendor crates using edition="2024").
+  * Export CARGO_HOME and prepend ~/.cargo/bin to PATH in debian/rules.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
+supergfxctl (5.2.7-2~jammy1) jammy; urgency=medium
+
+  * Fix offline Launchpad build failures:
+    - Skip upstream make distclean (override_dh_auto_clean) to preserve
+      the vendored crates shipped in the orig tarball.
+    - Strip stale Cargo.toml.orig references from vendor checksums at
+      build time (cargo vendor creates them; quilt cleanup deletes them).
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
 supergfxctl (5.2.7-1~jammy1) jammy; urgency=medium
 
   * Phase 2b Task 4: initial Debian packaging for supergfxctl 5.2.7

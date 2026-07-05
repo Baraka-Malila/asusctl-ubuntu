@@ -4,12 +4,13 @@ Priority: optional
 Maintainer: Baraka Malila <bmalila87@gmail.com>
 Build-Depends: debhelper-compat (= 12),
                cargo (>= 0.66),
-               rustc (>= 1.82),
+               rustc (>= 1.75),
                libudev-dev,
                libclang-dev,
                libinput-dev,
                pkg-config,
-               quilt
+               quilt,
+               python3
 Standards-Version: 4.6.2
 Homepage: https://github.com/Baraka-Malila/asusctl-ubuntu
 
