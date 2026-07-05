@@ -15,6 +15,9 @@ override_dh_auto_build:
 	# .cargo-checksum.json. dh_clean runs quilt clean which deletes all *.orig files,
 	# leaving stale checksum entries that make cargo fail. Strip them before building.
 	python3 -c "import json,os;[json.dump(dict(d,files={k:v for k,v in d['files'].items() if not k.endswith('.orig')}),open(p,'w'),separators=(',',':')) for c in(os.listdir('vendor')if os.path.isdir('vendor')else[])for p in[os.path.join('vendor',c,'.cargo-checksum.json')]if os.path.exists(p)for d in[json.load(open(p))]]"
+	# zvariant v5.1.0 uses Result::inspect() stabilised in Rust 1.76; Noble has 1.75.
+	# Replace .inspect(|&n| { body }) with .map(|n| { body; n }) which is equivalent.
+	python3 -c "import re,os;p='vendor/zvariant/src/ser.rs';s=open(p).read();s=re.sub(r'\.inspect\(\|&(\w+)\|\s*\{([^}]*)\}\)',lambda m: '.map(|'+m.group(1)+'| {'+m.group(2)+'; '+m.group(1)+'})',s);open(p,'w').write(s)"
 	cargo build --release --offline --ignore-rust-version --features "daemon cli"
 
 override_dh_auto_test:

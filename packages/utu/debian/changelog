@@ -1,3 +1,10 @@
+utu (0.1.5-2~noble1) noble; urgency=medium
+
+  * debian/rules: downgrade Cargo.lock from format v4 to v3 before build —
+    Noble's cargo 1.75 cannot parse lockfile version 4 (requires cargo 1.78+).
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sun, 06 Jul 2026 00:00:00 +0000
+
 utu (0.1.5-1~noble1) noble; urgency=medium
 
   * Remove KDE-only Display components: target_mode, oled_care, color_gamut,

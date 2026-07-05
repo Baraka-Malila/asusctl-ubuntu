@@ -16,6 +16,9 @@ override_dh_auto_clean:
 override_dh_auto_build:
 	# Strip stale .orig checksum entries left by quilt clean before building.
 	python3 -c 'import json,os;[json.dump(dict(d,files={k:v for k,v in d["files"].items() if not k.endswith(".orig")}),open(p,"w"),separators=(",",":")) for c in(os.listdir("vendor")if os.path.isdir("vendor")else[])for p in[os.path.join("vendor",c,".cargo-checksum.json")]if os.path.exists(p)for d in[json.load(open(p))]]'
+	# cargo vendor only adds crates-io redirect to config.toml; git deps need explicit
+	# source entries so cargo finds them offline in vendor/. sg-rs is a git-only crate.
+	printf '\n[source."git+https://github.com/flukejones/sg-rs.git#b1ce961ae42b0aad22166bac84e5105a918debd3"]\ngit = "https://github.com/flukejones/sg-rs.git"\nrev = "b1ce961ae42b0aad22166bac84e5105a918debd3"\nreplace-with = "vendored-sources"\n' >> .cargo/config.toml
 	# Patch every vendor crate that declares edition="2024" → "2021" and update
 	# its cargo checksum. cargo 1.75 cannot parse edition 2024 manifests.
 	python3 -c 'import json,os,hashlib;[(open(t,"wb").write(p),json.dump(dict(cs,files=dict(cs["files"],**{"Cargo.toml":hashlib.sha256(p).hexdigest()})),open(cp,"w"),separators=(",",":")))for c in(os.listdir("vendor")if os.path.isdir("vendor")else[])for t in[os.path.join("vendor",c,"Cargo.toml")]for cp in[os.path.join("vendor",c,".cargo-checksum.json")]if os.path.exists(t)and os.path.exists(cp)for raw in[open(t,"rb").read()]for p in[raw.replace(b"edition = \"2024\"",b"edition = \"2021\"")]if p!=raw for cs in[json.load(open(cp))]]'

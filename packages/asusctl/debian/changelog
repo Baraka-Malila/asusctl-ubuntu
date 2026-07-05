@@ -1,3 +1,12 @@
+asusctl (6.3.8-6~jammy1) jammy; urgency=medium
+
+  * debian/rules: add missing sg-rs git source redirect to .cargo/config.toml.
+    cargo vendor emits only the crates-io redirect; the sg-rs git dep (used by
+    rog-scsi for AniMatrix SCSI control) needs an explicit [source] entry to
+    resolve offline on Launchpad.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sun, 06 Jul 2026 00:00:00 +0000
+
 asusctl (6.3.8-5~jammy1) jammy; urgency=medium
 
   * Fix build-time edition="2024" patch: previous -4 one-liner only patched
