@@ -1,3 +1,11 @@
+supergfxctl (5.2.7-5~jammy1) jammy; urgency=medium
+
+  * Add --ignore-rust-version to cargo build: zvariant_utils v3.2.0 in the
+    vendor tree declares rustc-requires = "1.77" but Noble's apt cargo is
+    1.75. The flag suppresses the version check so apt cargo builds it fine.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
 supergfxctl (5.2.7-4~jammy1) jammy; urgency=medium
 
   * Fix Launchpad build: remove override_dh_auto_configure — Launchpad

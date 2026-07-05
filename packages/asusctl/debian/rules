@@ -14,10 +14,11 @@ override_dh_auto_clean:
 	# in the orig tarball for offline Launchpad builds — skip it.
 
 override_dh_auto_build:
-	# vendor/toml 1.1.2 uses edition="2024" which cargo 1.75 (Ubuntu's apt version) cannot
-	# parse. toml is only a dependency of excluded rog-control-center, so changing the edition
-	# field to "2021" is safe — it never gets compiled. Checksum must be updated to match.
-	python3 -c "import json,os,hashlib;t='vendor/toml/Cargo.toml';cp='vendor/toml/.cargo-checksum.json';[(open(t,'wb').write(p),json.dump(dict(cs,files=dict(cs['files'],**{'Cargo.toml':hashlib.sha256(p).hexdigest()})),open(cp,'w'),separators=(',',':')))for r in[open(t,'rb').read()if os.path.exists(t)else b'']for p in[r.replace(b'edition = \"2024\"',b'edition = \"2021\"')]if r and r!=p and os.path.exists(cp)for cs in[json.load(open(cp))]]"
+	# Strip stale .orig checksum entries left by quilt clean before building.
+	python3 -c 'import json,os;[json.dump(dict(d,files={k:v for k,v in d["files"].items() if not k.endswith(".orig")}),open(p,"w"),separators=(",",":")) for c in(os.listdir("vendor")if os.path.isdir("vendor")else[])for p in[os.path.join("vendor",c,".cargo-checksum.json")]if os.path.exists(p)for d in[json.load(open(p))]]'
+	# Patch every vendor crate that declares edition="2024" → "2021" and update
+	# its cargo checksum. cargo 1.75 cannot parse edition 2024 manifests.
+	python3 -c 'import json,os,hashlib;[(open(t,"wb").write(p),json.dump(dict(cs,files=dict(cs["files"],**{"Cargo.toml":hashlib.sha256(p).hexdigest()})),open(cp,"w"),separators=(",",":")))for c in(os.listdir("vendor")if os.path.isdir("vendor")else[])for t in[os.path.join("vendor",c,"Cargo.toml")]for cp in[os.path.join("vendor",c,".cargo-checksum.json")]if os.path.exists(t)and os.path.exists(cp)for raw in[open(t,"rb").read()]for p in[raw.replace(b"edition = \"2024\"",b"edition = \"2021\"")]if p!=raw for cs in[json.load(open(cp))]]'
 	cargo build --release --workspace \
 	    --offline \
 	    --ignore-rust-version \
