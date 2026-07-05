@@ -1,3 +1,15 @@
+utu (0.1.5-1~noble1) noble; urgency=medium
+
+  * Remove KDE-only Display components: target_mode, oled_care, color_gamut,
+    cosmic_panel — none of these work on GNOME and all showed error banners.
+  * Replace Fedora-only grubby with Ubuntu update-grub for Function Key kernel
+    parameter patching (/etc/default/grub + update-grub via pkexec).
+  * Fix GitHub button URL: Traciges → Baraka-Malila/utu.
+  * Fix attribution label in sidebar footer.
+  * Move run_qdbus helper from display/helpers into services/commands (cleanup).
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
 utu (0.1.4-2~noble1) noble; urgency=medium
 
   * Fix dh_auto_install: $(DESTDIR) is empty for custom override rules —
