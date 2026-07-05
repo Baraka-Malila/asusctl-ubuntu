@@ -1,3 +1,12 @@
+asusctl (6.3.8-3~jammy1) jammy; urgency=medium
+
+  * Add python3, curl, ca-certificates to Build-Depends.
+  * Install cargo >=1.85 via rustup at configure time: vendor/toml uses
+    edition="2024" which apt cargo 1.75 cannot parse.
+  * Export CARGO_HOME and prepend ~/.cargo/bin to PATH in debian/rules.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
 asusctl (6.3.8-2~jammy1) jammy; urgency=medium
 
   * Fix offline Launchpad build failures:

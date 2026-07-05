@@ -1,4 +1,7 @@
 #!/usr/bin/make -f
+export DH_VERBOSE = 1
+export CARGO_HOME = $(CURDIR)/debian/cargo-home
+export PATH := $(HOME)/.cargo/bin:$(PATH)
 
 # Skip binaries we don't ship in v0.1: asusd-user (session daemon) and
 # rog-control-center (Slint GUI, rejected by design).
@@ -9,6 +12,13 @@
 override_dh_auto_clean:
 	# Upstream Makefile distclean removes vendor/ and .cargo/ which we ship
 	# in the orig tarball for offline Launchpad builds — skip it.
+
+override_dh_auto_configure:
+	# vendor/toml uses edition="2024" which cargo <1.85 can't parse.
+	# Install a compatible toolchain via rustup if the system one is too old.
+	if ! cargo --version 2>/dev/null | awk '{split($$2,v,"."); exit !(v[1]>1 || (v[1]==1 && v[2]>=85))}'; then \
+	    curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.85.0 --no-modify-path --profile minimal; \
+	fi
 
 override_dh_auto_build:
 	# cargo vendor (1.79+) writes Cargo.toml.orig into each crate and lists it in

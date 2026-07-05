@@ -1,3 +1,12 @@
+supergfxctl (5.2.7-3~jammy1) jammy; urgency=medium
+
+  * Add python3, curl, ca-certificates to Build-Depends.
+  * Install cargo >=1.85 via rustup at configure time for consistency
+    with asusctl (guards against future vendor crates using edition="2024").
+  * Export CARGO_HOME and prepend ~/.cargo/bin to PATH in debian/rules.
+
+ -- Baraka Malila <bmalila87@gmail.com>  Sat, 05 Jul 2026 00:00:00 +0000
+
 supergfxctl (5.2.7-2~jammy1) jammy; urgency=medium
 
   * Fix offline Launchpad build failures:
